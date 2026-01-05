@@ -89,7 +89,7 @@ export default function FirstAid() {
       id: 3,
       title: "Severe Bleeding",
       severity: "urgent",
-      icon: Bandage,
+      icon: Cross,
       symptoms: ["Heavy bleeding", "Blood soaking through bandages", "Signs of shock"],
       steps: [
         "Call 112 if bleeding is severe",
