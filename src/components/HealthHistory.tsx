@@ -305,7 +305,13 @@ export default function HealthHistory() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 fade-in">
-              <Button variant="ghost" size="sm" className="btn-smooth" onClick={() => window.history.back()}>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="btn-smooth" 
+                onClick={() => window.location.href = window.location.origin + '/'}
+                data-testid="back-to-menu-health-history-btn"
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Main
               </Button>
