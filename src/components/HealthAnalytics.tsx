@@ -196,7 +196,10 @@ export default function HealthAnalytics() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => window.location.href = window.location.origin + '/'}
+                onClick={() => {
+                  window.history.pushState({}, '', '/');
+                  window.dispatchEvent(new Event('navigate'));
+                }}
                 data-testid="back-to-menu-health-analytics-btn"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
