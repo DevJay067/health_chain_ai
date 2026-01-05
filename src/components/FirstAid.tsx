@@ -238,9 +238,14 @@ export default function FirstAid() {
                   <p className="font-semibold text-sm text-gray-700">{contact.name}</p>
                   <p className="text-2xl font-bold text-red-600">{contact.number}</p>
                 </div>
-                <button className="ml-2 h-10 w-10 flex items-center justify-center rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
+                <a 
+                  href={`tel:${contact.number}`}
+                  className="ml-2 h-10 w-10 flex items-center justify-center rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                  title={`Call ${contact.name}`}
+                  data-testid={`call-${contact.type}-btn`}
+                >
                   <Phone className="h-4 w-4" />
-                </button>
+                </a>
               </div>
             ))}
           </div>
