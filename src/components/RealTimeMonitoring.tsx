@@ -77,6 +77,8 @@ export default function RealTimeMonitoring() {
   });
 
   const [vitalsHistory, setVitalsHistory] = useState<any[]>([]);
+  const [showBluetoothDialog, setShowBluetoothDialog] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [connectedDevices, setConnectedDevices] = useState<Device[]>([
     {
       id: "apple_watch",
