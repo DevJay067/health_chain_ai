@@ -27,20 +27,36 @@ function App() {
 
   // Handle navigation based on current pathname
   useEffect(() => {
-    const pathname = window.location.pathname;
-    if (pathname.includes('first-aid')) {
-      setCurrentPage('first-aid');
-    } else if (pathname.includes('monitoring')) {
-      setCurrentPage('monitoring');
-    } else if (pathname.includes('history')) {
-      setCurrentPage('history');
-    } else if (pathname.includes('analytics')) {
-      setCurrentPage('analytics');
-    } else if (pathname.includes('risk-prediction')) {
-      setCurrentPage('risk-prediction');
-    } else {
-      setCurrentPage('home');
-    }
+    const updatePage = () => {
+      const pathname = window.location.pathname;
+      if (pathname.includes('first-aid')) {
+        setCurrentPage('first-aid');
+      } else if (pathname.includes('monitoring')) {
+        setCurrentPage('monitoring');
+      } else if (pathname.includes('history')) {
+        setCurrentPage('history');
+      } else if (pathname.includes('analytics')) {
+        setCurrentPage('analytics');
+      } else if (pathname.includes('risk-prediction')) {
+        setCurrentPage('risk-prediction');
+      } else {
+        setCurrentPage('home');
+      }
+    };
+
+    // Initial check
+    updatePage();
+
+    // Listen for popstate (back/forward button)
+    window.addEventListener('popstate', updatePage);
+    
+    // Listen for custom navigation event
+    window.addEventListener('navigate', updatePage);
+
+    return () => {
+      window.removeEventListener('popstate', updatePage);
+      window.removeEventListener('navigate', updatePage);
+    };
   }, []);
 
   // Render appropriate page based on currentPage
