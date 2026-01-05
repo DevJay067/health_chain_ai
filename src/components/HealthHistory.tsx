@@ -309,7 +309,10 @@ export default function HealthHistory() {
                 variant="ghost" 
                 size="sm" 
                 className="btn-smooth" 
-                onClick={() => window.location.href = window.location.origin + '/'}
+                onClick={() => {
+                  window.history.pushState({}, '', '/');
+                  window.dispatchEvent(new Event('navigate'));
+                }}
                 data-testid="back-to-menu-health-history-btn"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
