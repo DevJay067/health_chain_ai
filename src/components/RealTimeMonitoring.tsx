@@ -715,6 +715,49 @@ export default function RealTimeMonitoring() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Bluetooth Connection Dialog */}
+      {showBluetoothDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowBluetoothDialog(false)}>
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 rounded-full bg-blue-100">
+                <Bluetooth className="w-6 h-6 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold">Connect Bluetooth Device</h2>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Scan for nearby Bluetooth health devices and connect them to your monitoring dashboard.
+            </p>
+            <div className="space-y-4">
+              <Button 
+                onClick={handleScanBluetooth}
+                disabled={isScanning}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isScanning ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Scanning...
+                  </>
+                ) : (
+                  <>
+                    <Bluetooth className="w-4 h-4 mr-2" />
+                    Scan for Devices
+                  </>
+                )}
+              </Button>
+              <Button 
+                onClick={() => setShowBluetoothDialog(false)}
+                variant="outline"
+                className="w-full"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
