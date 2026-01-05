@@ -2,8 +2,8 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function BackButton() {
   const handleBackHome = () => {
-    const homeURL = window.location.origin;
-    window.location.href = homeURL;
+    window.history.pushState({}, '', '/');
+    window.dispatchEvent(new Event('navigate'));
   };
 
   return (
