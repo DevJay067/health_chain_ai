@@ -1,3 +1,30 @@
+import React from 'react';
+
+export default function HealthRiskPrediction() {
+  const backToMenu = () => {
+    if (window && window.history && window.dispatchEvent) {
+      window.history.pushState({}, '', '/');
+      window.dispatchEvent(new Event('navigate'));
+      try { window.scrollTo(0, 0); } catch (e) {}
+    } else {
+      window.location.href = '/';
+    }
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'linear-gradient(to bottom right,#f8fafc,#eef2ff)'}}>
+      <div style={{ maxWidth: 720, width: '100%', background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 8px 30px rgba(2,6,23,0.08)', textAlign: 'center' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>B-Max AI — Health Insights</h1>
+        <p style={{ color: '#475569', marginBottom: 18 }}>This feature integrates with the external B-Max AI JotForm. Use the button below to open the integration or return to the main menu.</p>
+
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          <button onClick={backToMenu} style={{ padding: '10px 18px', borderRadius: 12, background: '#3b82f6', color: 'white', border: 'none', cursor: 'pointer' }}>Back to Menu</button>
+          <a href="https://www.jotform.com/app/253583637449470" target="_blank" rel="noreferrer" style={{ padding: '10px 18px', borderRadius: 12, background: '#7c3aed', color: 'white', textDecoration: 'none' }}>Open B-Max AI</a>
+        </div>
+      </div>
+    </div>
+  );
+}
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,126 +38,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  Brain,
-  AlertTriangle,
-  Shield,
-  TrendingUp,
-  TrendingDown,
-  Heart,
-  Activity,
-  Thermometer,
-  Droplets,
-  Target,
-  Zap,
-  BarChart3,
-  Calendar,
-  Clock,
-  Info,
-  CheckCircle,
-  XCircle,
-  RefreshCw,
-  ArrowLeft,
-  Home,
-} from "lucide-react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  AreaChart,
-  Area,
-} from "recharts";
+  // HealthRiskPrediction removed: stub component remains to avoid import errors.
+  import React from 'react';
 
-interface RiskFactor {
-  id: string;
-  name: string;
-  category: "lifestyle" | "genetic" | "environmental" | "medical";
-  impact: "low" | "medium" | "high" | "critical";
-  value: number;
-  trend: "improving" | "stable" | "worsening";
-  description: string;
-  recommendations: string[];
-}
-
-interface HealthRisk {
-  condition: string;
-  probability: number;
-  severity: "low" | "medium" | "high" | "critical";
-  timeframe: "1 month" | "6 months" | "1 year" | "5 years";
-  confidence: number;
-  primaryFactors: string[];
-  prevention: string[];
-  icon: any;
-  color: string;
-}
-
-interface MLPrediction {
-  timestamp: string;
-  overallRiskScore: number;
-  category: string;
-  prediction: string;
-  confidence: number;
-  factors: string[];
-}
-
-export default function HealthRiskPrediction() {
-  const [riskFactors, setRiskFactors] = useState<RiskFactor[]>([
-    {
-      id: "blood_pressure",
-      name: "Blood Pressure",
-      category: "medical",
-      impact: "high",
-      value: 78,
-      trend: "stable",
-      description: "Current BP readings within normal range",
-      recommendations: [
-        "Continue regular monitoring",
-        "Maintain low-sodium diet",
-        "Regular exercise",
-      ],
-    },
-    {
-      id: "cholesterol",
-      name: "Cholesterol Levels",
-      category: "medical",
-      impact: "medium",
-      value: 65,
-      trend: "improving",
-      description: "LDL levels slightly elevated but improving",
-      recommendations: [
-        "Increase fiber intake",
-        "Consider statin therapy",
-        "Regular lipid panel checks",
-      ],
-    },
-    {
-      id: "exercise",
-      name: "Physical Activity",
-      category: "lifestyle",
-      impact: "high",
-      value: 85,
-      trend: "improving",
-      description: "Excellent activity levels based on wearable data",
-      recommendations: [
-        "Maintain current routine",
-        "Add strength training",
-        "Track heart rate zones",
-      ],
-    },
-    {
-      id: "sleep",
-      name: "Sleep Quality",
-      category: "lifestyle",
-      impact: "medium",
-      value: 72,
+  export default function HealthRiskPrediction() {
+    // Component removed per request. Return null so routes/imports don't break.
+    return null;
       trend: "stable",
       description: "Good sleep duration, some quality issues",
       recommendations: [

@@ -30,11 +30,11 @@ import {
   Brain,
   Bluetooth,
   BarChart3,
-  MapPin,
   Navigation,
   Plus,
 } from "lucide-react";
 import BluetoothHealthMonitor from "@/components/BluetoothHealthMonitor";
+import { supabaseOperations } from '@/lib/supabase';
 import {
   LineChart,
   Line,
@@ -229,28 +229,6 @@ export default function RealTimeMonitoring() {
     }, 2000);
   };
 
-  const handleFindNearestHospital = () => {
-    // Get user's location and open Google Maps
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          // Open Google Maps with hospital search
-          window.open(
-            `https://www.google.com/maps/search/hospitals+near+me/@${latitude},${longitude},15z`,
-            '_blank'
-          );
-        },
-        (error) => {
-          // Fallback if location access denied
-          window.open('https://www.google.com/maps/search/hospitals+near+me', '_blank');
-        }
-      );
-    } else {
-      // Fallback for browsers without geolocation
-      window.open('https://www.google.com/maps/search/hospitals+near+me', '_blank');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-50 page-transition">
@@ -277,15 +255,7 @@ export default function RealTimeMonitoring() {
               </div>
             </div>
             <div className="flex items-center space-x-3 fade-in fade-in-delay-1">
-              <Button 
-                onClick={handleFindNearestHospital}
-                variant="outline"
-                size="sm"
-                className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
-              >
-                <MapPin className="w-4 h-4 mr-2" />
-                Find Hospital
-              </Button>
+              {/* Find Hospital moved to Emergency First Aid page */}
               <Button 
                 onClick={handleConnectBluetooth}
                 variant="outline"
@@ -294,6 +264,31 @@ export default function RealTimeMonitoring() {
               >
                 <Bluetooth className="w-4 h-4 mr-2" />
                 Connect Device
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    const userId = (window as any).__USER_ID || 'anonymous';
+                    const vitals = {
+                      heartRate: vitalSigns.heartRate,
+                      bloodPressure: vitalSigns.bloodPressure,
+                      temperature: vitalSigns.temperature,
+                      oxygenSaturation: vitalSigns.oxygenSaturation,
+                      respiratoryRate: vitalSigns.respiratoryRate,
+                      timestamp: new Date().toISOString(),
+                    };
+                    await supabaseOperations.recordVitalSigns(userId, vitals);
+                    alert('Vitals saved to health records');
+                  } catch (err) {
+                    console.error(err);
+                    alert('Failed to save vitals');
+                  }
+                }}
+                variant="outline"
+                size="sm"
+                className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+              >
+                Save Vitals
               </Button>
               <Badge
                 variant="secondary"

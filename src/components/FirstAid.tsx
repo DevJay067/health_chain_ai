@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, ArrowLeft, AlertTriangle, Phone, Timer, Zap, Cross, Activity, Thermometer, Users, FileText, Youtube, ExternalLink, Play, Clock, CheckCircle, Search } from "lucide-react";
+import { Heart, ArrowLeft, AlertTriangle, Phone, Timer, Zap, Cross, Activity, Thermometer, Users, FileText, Youtube, ExternalLink, Play, Clock, CheckCircle, Search, MapPin } from "lucide-react";
 
 interface EmergencyContact {
   name: string;
@@ -47,6 +47,34 @@ export default function FirstAid() {
     { name: "Medical Emergency", number: "108", type: "medical" },
     { name: "Mental Health Crisis", number: "9152987821", type: "mental" }
   ];
+
+  const handleCall = (number: string) => {
+    // Use tel: link to initiate a call on supported devices
+    try {
+      window.location.href = `tel:${number}`;
+    } catch (e) {
+      alert(`Please call: ${number}`);
+    }
+  };
+
+  const handleFindNearestHospital = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          window.open(
+            `https://www.google.com/maps/search/hospitals+near+me/@${latitude},${longitude},15z`,
+            '_blank'
+          );
+        },
+        () => {
+          window.open('https://www.google.com/maps/search/hospitals+near+me', '_blank');
+        }
+      );
+    } else {
+      window.open('https://www.google.com/maps/search/hospitals+near+me', '_blank');
+    }
+  };
 
   const firstAidConditions: FirstAidCondition[] = [
     {
@@ -231,6 +259,18 @@ export default function FirstAid() {
             <Phone className="h-6 w-6 text-red-600" />
             <h2 className="text-2xl font-bold text-gray-900">Emergency Contacts</h2>
           </div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleFindNearestHospital()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg flex items-center gap-2 hover:bg-red-700 transition-colors"
+              >
+                <MapPin className="h-4 w-4" />
+                Find Nearest Hospital
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {emergencyContacts.map((contact, index) => (
               <div key={index} className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow">
@@ -238,7 +278,11 @@ export default function FirstAid() {
                   <p className="font-semibold text-sm text-gray-700">{contact.name}</p>
                   <p className="text-2xl font-bold text-red-600">{contact.number}</p>
                 </div>
-                <button className="ml-2 h-10 w-10 flex items-center justify-center rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
+                <button
+                  onClick={() => handleCall(contact.number)}
+                  aria-label={`Call ${contact.name}`}
+                  className="ml-2 h-10 w-10 flex items-center justify-center rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                >
                   <Phone className="h-4 w-4" />
                 </button>
               </div>

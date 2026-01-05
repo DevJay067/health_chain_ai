@@ -166,6 +166,10 @@
         <span class="badge">🚨 EMERGENCY</span>
         <h1>Health Emergency & First Aid</h1>
         
+        <div style="margin:16px 0; display:flex; gap:12px; flex-wrap:wrap;">
+            <button class="cta-btn" id="find-hospital">Find Nearest Hospital</button>
+            <button class="cta-btn" id="call-112">Call 112</button>
+        </div>
         <p>Instant access to emergency protocols and first aid guides when you need them most. Our comprehensive emergency response system is designed to provide quick, life-saving information.</p>
         
         <div class="features-list">
@@ -193,6 +197,36 @@
             // Navigate back to the main page
             window.location.href = 'https://devjay-healthcare.netlify.app/';
         }
+    </script>
+    <script>
+        function handleFindNearestHospital() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(pos) {
+                    const { latitude, longitude } = pos.coords;
+                    window.open(`https://www.google.com/maps/search/hospitals+near+me/@${latitude},${longitude},15z`, '_blank');
+                }, function() {
+                    window.open('https://www.google.com/maps/search/hospitals+near+me', '_blank');
+                });
+            } else {
+                window.open('https://www.google.com/maps/search/hospitals+near+me', '_blank');
+            }
+        }
+
+        function handleCall112() {
+            // attempt to use tel: link; if unsupported, show the number
+            try {
+                window.location.href = 'tel:112';
+            } catch (e) {
+                alert('Please call 112');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const f = document.getElementById('find-hospital');
+            const c = document.getElementById('call-112');
+            if (f) f.addEventListener('click', handleFindNearestHospital);
+            if (c) c.addEventListener('click', handleCall112);
+        });
     </script>
 </body>
 </html>

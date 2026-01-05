@@ -25,7 +25,7 @@ export default function Features({ scrollY }: FeaturesProps) {
       shadowColor: 'shadow-violet-300/50',
       badge: 'AI Powered',
       badgeColor: 'bg-violet-100 text-violet-600',
-      href: '/risk-prediction',
+      href: 'https://www.jotform.com/app/253583637449470',
       isSpecial: true,
     },
     {
@@ -68,16 +68,6 @@ export default function Features({ scrollY }: FeaturesProps) {
       badge: 'Live IoT Data',
       badgeColor: 'bg-blue-100 text-blue-600',
       href: '/monitoring',
-    },
-    {
-      icon: Brain,
-      title: 'Risk Prediction',
-      description: 'AI-powered health risk prediction with machine learning analysis and personalized prevention strategies.',
-      color: 'from-indigo-500 to-purple-400',
-      shadowColor: 'shadow-indigo-300/50',
-      badge: 'ML Powered',
-      badgeColor: 'bg-indigo-100 text-indigo-600',
-      href: '/risk-prediction',
     },
   ];
 

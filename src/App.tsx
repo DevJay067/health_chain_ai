@@ -8,9 +8,7 @@ import FirstAid from './components/FirstAid';
 import HealthHistory from './components/HealthHistory';
 import HealthAnalytics from './components/HealthAnalytics';
 import RealTimeMonitoring from './components/RealTimeMonitoring';
-import HealthRiskPrediction from './components/HealthRiskPrediction';
-
-type PageType = 'home' | 'first-aid' | 'monitoring' | 'history' | 'analytics' | 'risk-prediction';
+type PageType = 'home' | 'first-aid' | 'monitoring' | 'history' | 'analytics';
 
 function App() {
   const [scrollY, setScrollY] = useState(0);
@@ -37,10 +35,14 @@ function App() {
         setCurrentPage('history');
       } else if (pathname.includes('analytics')) {
         setCurrentPage('analytics');
-      } else if (pathname.includes('risk-prediction')) {
-        setCurrentPage('risk-prediction');
       } else {
         setCurrentPage('home');
+      }
+      // Ensure navigation always starts at the top of the page
+      try {
+        window.scrollTo(0, 0);
+      } catch (e) {
+        /* ignore */
       }
     };
 
@@ -69,8 +71,6 @@ function App() {
       return <HealthAnalytics />;
     case 'monitoring':
       return <RealTimeMonitoring />;
-    case 'risk-prediction':
-      return <HealthRiskPrediction />;
     default:
       return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
