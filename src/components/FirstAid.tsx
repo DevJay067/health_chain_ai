@@ -183,13 +183,8 @@ export default function FirstAid() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button 
-                onClick={() => {
-                  window.history.pushState({}, '', '/');
-                  window.dispatchEvent(new Event('navigate'));
-                }}
-                className="px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-gray-700 font-medium"
-                data-testid="back-to-menu-first-aid-btn"
-              >
+                onClick={() => window.location.href = '/'}
+                className="px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-gray-700 font-medium">
                 <ArrowLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Back to Main</span>
                 <span className="sm:hidden">Back</span>
@@ -243,14 +238,9 @@ export default function FirstAid() {
                   <p className="font-semibold text-sm text-gray-700">{contact.name}</p>
                   <p className="text-2xl font-bold text-red-600">{contact.number}</p>
                 </div>
-                <a 
-                  href={`tel:${contact.number}`}
-                  className="ml-2 h-10 w-10 flex items-center justify-center rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-                  title={`Call ${contact.name}`}
-                  data-testid={`call-${contact.type}-btn`}
-                >
+                <button className="ml-2 h-10 w-10 flex items-center justify-center rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
                   <Phone className="h-4 w-4" />
-                </a>
+                </button>
               </div>
             ))}
           </div>

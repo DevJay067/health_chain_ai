@@ -217,16 +217,7 @@ export default function RealTimeMonitoring() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 fade-in">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="btn-smooth" 
-                onClick={() => {
-                  window.history.pushState({}, '', '/');
-                  window.dispatchEvent(new Event('navigate'));
-                }}
-                data-testid="back-to-menu-monitoring-btn"
-              >
+              <Button variant="ghost" size="sm" className="btn-smooth" onClick={() => window.history.back()}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Main
               </Button>

@@ -5,17 +5,6 @@ interface FeaturesProps {
 }
 
 export default function Features({ scrollY }: FeaturesProps) {
-  const handleNavigation = (href: string) => {
-    if (href.startsWith('http')) {
-      // External link - open in same tab
-      window.location.href = href;
-    } else {
-      // Internal link - use pushState for SPA navigation
-      window.history.pushState({}, '', href);
-      window.dispatchEvent(new Event('navigate'));
-    }
-  };
-
   const features = [
     {
       icon: Brain,
@@ -143,9 +132,8 @@ export default function Features({ scrollY }: FeaturesProps) {
                 </p>
 
                 <button
-                  onClick={() => handleNavigation(feature.href)}
+                  onClick={() => feature.href !== '#' && window.location.replace(feature.href)}
                   className="flex items-center space-x-2 text-blue-600 font-semibold group-hover:space-x-3 transition-all duration-300"
-                  data-testid={`feature-${feature.title.toLowerCase().replace(/\s+/g, '-')}-btn`}
                 >
                   <span>Learn more</span>
                   <ArrowRight className="w-5 h-5" />
@@ -163,10 +151,8 @@ export default function Features({ scrollY }: FeaturesProps) {
             Join thousands of users who trust HealthChain for secure, AI-powered health management
           </p>
           <button
-            onClick={() => handleNavigation('https://www.jotform.com/app/253583637449470')}
-            className="px-10 py-4 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-full font-semibold shadow-2xl shadow-blue-300/50 hover:shadow-blue-400/60 transition-all duration-300 hover:scale-105"
-            data-testid="get-started-btn"
-          >
+            onClick={() => window.location.replace('https://www.jotform.com/app/253583637449470')}
+            className="px-10 py-4 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-full font-semibold shadow-2xl shadow-blue-300/50 hover:shadow-blue-400/60 transition-all duration-300 hover:scale-105">
             Get Started Today
           </button>
         </div>
