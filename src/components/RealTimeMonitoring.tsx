@@ -30,6 +30,9 @@ import {
   Brain,
   Bluetooth,
   BarChart3,
+  MapPin,
+  Navigation,
+  Plus,
 } from "lucide-react";
 import BluetoothHealthMonitor from "@/components/BluetoothHealthMonitor";
 import {
