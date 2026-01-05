@@ -193,7 +193,12 @@ export default function HealthAnalytics() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => window.location.href = window.location.origin + '/'}
+                data-testid="back-to-menu-health-analytics-btn"
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Main
               </Button>
