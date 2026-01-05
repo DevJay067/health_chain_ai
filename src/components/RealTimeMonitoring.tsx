@@ -216,6 +216,42 @@ export default function RealTimeMonitoring() {
   const tempStatus = getVitalStatus("temperature", vitalSigns.temperature);
   const oxygenStatus = getVitalStatus("oxygenSat", vitalSigns.oxygenSaturation);
 
+  const handleConnectBluetooth = () => {
+    setShowBluetoothDialog(true);
+  };
+
+  const handleScanBluetooth = async () => {
+    setIsScanning(true);
+    // Simulate scanning
+    setTimeout(() => {
+      setIsScanning(false);
+      alert('Bluetooth devices found! In a real app, this would show available devices.');
+    }, 2000);
+  };
+
+  const handleFindNearestHospital = () => {
+    // Get user's location and open Google Maps
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          // Open Google Maps with hospital search
+          window.open(
+            `https://www.google.com/maps/search/hospitals+near+me/@${latitude},${longitude},15z`,
+            '_blank'
+          );
+        },
+        (error) => {
+          // Fallback if location access denied
+          window.open('https://www.google.com/maps/search/hospitals+near+me', '_blank');
+        }
+      );
+    } else {
+      // Fallback for browsers without geolocation
+      window.open('https://www.google.com/maps/search/hospitals+near+me', '_blank');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-50 page-transition">
       <header className="border-b border-border/40 glass backdrop-blur-xl sticky top-0 z-50">
