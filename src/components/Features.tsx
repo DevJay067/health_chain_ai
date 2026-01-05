@@ -5,6 +5,17 @@ interface FeaturesProps {
 }
 
 export default function Features({ scrollY }: FeaturesProps) {
+  const handleNavigation = (href: string) => {
+    if (href.startsWith('http')) {
+      // External link - open directly
+      window.location.href = href;
+    } else {
+      // Internal link - use SPA navigation
+      window.history.pushState({}, '', href);
+      window.dispatchEvent(new Event('navigate'));
+    }
+  };
+
   const features = [
     {
       icon: Brain,
