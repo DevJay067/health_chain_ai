@@ -25,7 +25,7 @@ export default function Features({ scrollY }: FeaturesProps) {
       shadowColor: 'shadow-violet-300/50',
       badge: 'AI Powered',
       badgeColor: 'bg-violet-100 text-violet-600',
-      href: 'https://www.jotform.com/app/253583637449470',
+      href: '/risk-prediction',
       isSpecial: true,
     },
     {
