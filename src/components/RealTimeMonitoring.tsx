@@ -277,6 +277,24 @@ export default function RealTimeMonitoring() {
               </div>
             </div>
             <div className="flex items-center space-x-3 fade-in fade-in-delay-1">
+              <Button 
+                onClick={handleFindNearestHospital}
+                variant="outline"
+                size="sm"
+                className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                Find Hospital
+              </Button>
+              <Button 
+                onClick={handleConnectBluetooth}
+                variant="outline"
+                size="sm"
+                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              >
+                <Bluetooth className="w-4 h-4 mr-2" />
+                Connect Device
+              </Button>
               <Badge
                 variant="secondary"
                 className="bg-green-50 text-green-700 border-green-200"
