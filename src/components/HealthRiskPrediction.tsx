@@ -29,6 +29,8 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
+  ArrowLeft,
+  Home,
 } from "lucide-react";
 import {
   LineChart,
