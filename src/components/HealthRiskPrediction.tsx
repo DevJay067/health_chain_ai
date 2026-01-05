@@ -439,7 +439,7 @@ export default function HealthRiskPrediction() {
           </CardContent>
         </Card>
 
-      <Card className="shadow-colored-lg border-border/50">
+        <Card className="shadow-colored-lg border-border/50">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
