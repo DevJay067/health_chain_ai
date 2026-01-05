@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, ArrowLeft, AlertTriangle, Phone, Timer, Zap, Bandage, Activity, Thermometer, Users, FileText, Youtube, ExternalLink, Play, Clock, CheckCircle, Search } from "lucide-react";
+import { Heart, ArrowLeft, AlertTriangle, Phone, Timer, Zap, Cross, Activity, Thermometer, Users, FileText, Youtube, ExternalLink, Play, Clock, CheckCircle, Search } from "lucide-react";
 
 interface EmergencyContact {
   name: string;
