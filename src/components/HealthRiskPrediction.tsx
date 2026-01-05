@@ -388,7 +388,8 @@ export default function HealthRiskPrediction() {
   }));
 
   const handleBackToMenu = () => {
-    window.location.href = window.location.origin;
+    window.history.pushState({}, '', '/');
+    window.dispatchEvent(new Event('navigate'));
   };
 
   return (
