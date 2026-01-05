@@ -34,7 +34,6 @@ import {
   Plus,
 } from "lucide-react";
 import BluetoothHealthMonitor from "@/components/BluetoothHealthMonitor";
-import { supabaseOperations } from '@/lib/supabase';
 import {
   LineChart,
   Line,
@@ -264,31 +263,6 @@ export default function RealTimeMonitoring() {
               >
                 <Bluetooth className="w-4 h-4 mr-2" />
                 Connect Device
-              </Button>
-              <Button
-                onClick={async () => {
-                  try {
-                    const userId = (window as any).__USER_ID || 'anonymous';
-                    const vitals = {
-                      heartRate: vitalSigns.heartRate,
-                      bloodPressure: vitalSigns.bloodPressure,
-                      temperature: vitalSigns.temperature,
-                      oxygenSaturation: vitalSigns.oxygenSaturation,
-                      respiratoryRate: vitalSigns.respiratoryRate,
-                      timestamp: new Date().toISOString(),
-                    };
-                    await supabaseOperations.recordVitalSigns(userId, vitals);
-                    alert('Vitals saved to health records');
-                  } catch (err) {
-                    console.error(err);
-                    alert('Failed to save vitals');
-                  }
-                }}
-                variant="outline"
-                size="sm"
-                className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-              >
-                Save Vitals
               </Button>
               <Badge
                 variant="secondary"

@@ -10,7 +10,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { supabaseOperations } from '@/lib/supabase';
 import {
   Bluetooth,
   BluetoothConnected,
@@ -229,33 +228,39 @@ export default function BluetoothHealthMonitor() {
 
     setIsScanning(true);
     try {
-      let device: BluetoothDevice | undefined;
-      try {
-        device = await navigator.bluetooth.requestDevice({
-          filters: [
-            { services: ["heart_rate"] },
-            { services: ["blood_pressure"] },
-            { services: ["health_thermometer"] },
-            { namePrefix: "Apple Watch" },
-            { namePrefix: "Fitbit" },
-          ],
-          optionalServices: [
-            "heart_rate",
-            "blood_pressure",
-            "health_thermometer",
-          ],
-        });
-      } catch (primaryErr) {
-        // Fallback: attempt a generic scan that accepts all devices (user agent may prompt)
-        try {
-          device = await navigator.bluetooth.requestDevice({
-            acceptAllDevices: true,
-            optionalServices: ["heart_rate", "blood_pressure", "health_thermometer"],
-          });
-        } catch (fallbackErr) {
-          throw fallbackErr || primaryErr;
-        }
-      }
+      // Expanded BLE device scanning to support all major health device manufacturers
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [
+          { services: ["heart_rate"] },
+          { services: ["blood_pressure"] },
+          { services: ["health_thermometer"] },
+          { services: ["body_composition"] },
+          { services: ["cycling_power"] },
+          { namePrefix: "Apple Watch" },
+          { namePrefix: "Fitbit" },
+          { namePrefix: "Garmin" },
+          { namePrefix: "Xiaomi" },
+          { namePrefix: "Samsung" },
+          { namePrefix: "Omron" },
+          { namePrefix: "Withings" },
+          { namePrefix: "Polar" },
+          { namePrefix: "Suunto" },
+          { namePrefix: "Amazfit" },
+          { namePrefix: "Huami" },
+        ],
+        optionalServices: [
+          "heart_rate",
+          "blood_pressure",
+          "health_thermometer",
+          "body_composition",
+          "cycling_power",
+          "cycling_speed_cadence",
+          "device_information",
+          "battery_service",
+          "generic_access",
+          "generic_attribute",
+        ],
+      });
 
       if (device) {
         console.log(`📱 Found device: ${device.name || "Unknown"}`);
@@ -354,22 +359,8 @@ export default function BluetoothHealthMonitor() {
       );
 
       await startMonitoring(bluetoothDevice, server, targetDevice.id);
-      console.log(`✅ Device connected successfully: ${deviceName}`);
 
-      // Persist connection record (best-effort)
-      try {
-        const userId = (window as any).__USER_ID || 'anonymous';
-        await supabaseOperations.saveDeviceConnection(userId, {
-          device_id: targetDevice.id,
-          name: targetDevice.name,
-          bluetooth_id: bluetoothDevice.id,
-          type: targetDevice.type,
-          capabilities: targetDevice.capabilities,
-          last_sync: new Date().toISOString(),
-        });
-      } catch (saveErr) {
-        console.warn('Failed to save device connection:', saveErr);
-      }
+      console.log(`✅ Device connected successfully: ${deviceName}`);
     } catch (error) {
       console.error("Connection failed:", error);
       setDevices((prev) =>

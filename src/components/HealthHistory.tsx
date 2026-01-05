@@ -129,44 +129,61 @@ export default function HealthHistory() {
   const loadInitialData = async () => {
     try {
       setIsLoading(true);
-      // Simulate loading demo records
-      const demoRecords: HealthRecord[] = [
-        {
-          id: "1",
-          type: "checkup",
-          title: "Annual Physical Exam",
-          description: "Comprehensive annual checkup with all vitals checked",
-          date: "2024-12-20",
-          doctor: "Dr. Smith",
-          isSecure: true,
-          blockchainHash: "0x123abc...",
-          metadata: {
-            weight: "72",
-            height: "180",
-            bloodPressure: "120/80",
-            heartRate: "72",
-            temperature: "98.6",
-            notes: "All results normal",
+      // Try to load from Supabase, fallback to demo records
+      let recordsToDisplay: HealthRecord[] = [];
+      try {
+        const client = (window as any).supabaseClient;
+        if (client) {
+          const { data, error } = await client
+            .from('health_records')
+            .select('*')
+            .order('date', { ascending: false })
+            .limit(50);
+          if (!error && data && data.length > 0) {
+            recordsToDisplay = data.map((r: any) => ({
+              id: r.id,
+              type: r.type,
+              title: r.title,
+              description: r.description,
+              date: r.date,
+              doctor: r.doctor,
+              isSecure: r.is_secure,
+              blockchainHash: r.blockchain_hash,
+              metadata: r.metadata,
+            }));
+          }
+        }
+      } catch (e) {
+        console.warn('Supabase unavailable, using demo records');
+      }
+      
+      // Fallback to demo records if empty
+      if (recordsToDisplay.length === 0) {
+        recordsToDisplay = [
+          {
+            id: "1",
+            type: "checkup",
+            title: "Annual Physical Exam",
+            description: "Comprehensive annual checkup with all vitals checked",
+            date: "2024-12-20",
+            doctor: "Dr. Smith",
+            isSecure: true,
+            blockchainHash: "0x123abc...",
+            metadata: {
+              weight: "72",
+              height: "180",
+              bloodPressure: "120/80",
+              heartRate: "72",
+              temperature: "98.6",
+              notes: "All results normal",
+            },
           },
-        },
-        {
-          id: "2",
-          type: "lab",
-          title: "Blood Work Results",
-          description: "Annual blood work including CBC and metabolic panel",
-          date: "2024-12-15",
-          doctor: "Dr. Johnson",
-          isSecure: true,
-          blockchainHash: "0x456def...",
-          metadata: {
-            notes: "All values within normal range",
-          },
-        },
-      ];
-      setRecords(demoRecords);
+        ];
+      }
+      setRecords(recordsToDisplay);
       setStats({
-        totalRecords: demoRecords.length,
-        secureRecords: demoRecords.filter((r) => r.isSecure).length,
+        totalRecords: recordsToDisplay.length,
+        secureRecords: recordsToDisplay.filter((r) => r.isSecure).length,
         lastUpdate: new Date().toISOString(),
       });
     } catch (error) {
@@ -195,10 +212,31 @@ export default function HealthHistory() {
         metadata: newRecord.metadata,
       };
 
+      // Try to save to Supabase
+      try {
+        const client = (window as any).supabaseClient;
+        if (client) {
+          await client.from('health_records').insert({
+            id: newRecordData.id,
+            type: newRecordData.type,
+            title: newRecordData.title,
+            description: newRecordData.description,
+            date: newRecordData.date,
+            doctor: newRecordData.doctor,
+            is_secure: newRecordData.isSecure,
+            blockchain_hash: newRecordData.blockchainHash,
+            metadata: newRecordData.metadata,
+            created_at: new Date().toISOString(),
+          });
+        }
+      } catch (supabaseError) {
+        console.warn('Supabase save failed, storing locally', supabaseError);
+      }
+
       setRecords((prev) => [newRecordData, ...prev]);
       setMessage({
         type: "success",
-        text: "Health record saved securely to blockchain!",
+        text: "Health record saved securely!",
       });
       setIsDialogOpen(false);
       setNewRecord({
