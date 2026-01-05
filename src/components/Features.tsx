@@ -162,7 +162,7 @@ export default function Features({ scrollY }: FeaturesProps) {
             Join thousands of users who trust HealthChain for secure, AI-powered health management
           </p>
           <button
-            onClick={() => window.location.replace('https://www.jotform.com/app/253583637449470')}
+            onClick={() => handleNavigation('https://www.jotform.com/app/253583637449470')}
             className="px-10 py-4 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-full font-semibold shadow-2xl shadow-blue-300/50 hover:shadow-blue-400/60 transition-all duration-300 hover:scale-105">
             Get Started Today
           </button>
