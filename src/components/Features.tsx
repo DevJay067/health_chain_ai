@@ -107,6 +107,7 @@ export default function Features({ scrollY }: FeaturesProps) {
             return (
               <div
                 key={feature.title}
+                onClick={() => handleNavigation(feature.href)}
                 className={`group backdrop-blur-xl rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 cursor-pointer ${
                   isEmergencyCard
                     ? 'bg-gradient-to-br from-red-400/25 via-red-300/20 to-rose-300/20 border border-red-200/50 shadow-2xl shadow-red-400/30'
@@ -142,13 +143,10 @@ export default function Features({ scrollY }: FeaturesProps) {
                   {feature.description}
                 </p>
 
-                <button
-                  onClick={() => handleNavigation(feature.href)}
-                  className="flex items-center space-x-2 text-blue-600 font-semibold group-hover:space-x-3 transition-all duration-300"
-                >
+                <div className="flex items-center space-x-2 text-blue-600 font-semibold group-hover:space-x-3 transition-all duration-300">
                   <span>Learn more</span>
                   <ArrowRight className="w-5 h-5" />
-                </button>
+                </div>
               </div>
             );
           })}
