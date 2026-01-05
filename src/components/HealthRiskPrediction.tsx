@@ -772,6 +772,7 @@ export default function HealthRiskPrediction() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
