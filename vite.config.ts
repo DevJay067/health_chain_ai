@@ -17,7 +17,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
     allowedHosts: [
-      'deployment-ready-6.preview.emergentagent.com',
+      '.emergent.host',
       '.preview.emergentagent.com',
       'localhost',
       '127.0.0.1'
