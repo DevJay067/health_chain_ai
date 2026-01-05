@@ -408,6 +408,37 @@ export default function HealthRiskPrediction() {
       </div>
 
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* B-Max AI JotForm Section */}
+        <Card className="shadow-colored-lg border-border/50 overflow-hidden">
+          <CardHeader className="pb-4 bg-gradient-to-r from-violet-500/10 to-purple-500/10">
+            <div className="flex items-center space-x-3">
+              <div className="p-3 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg">
+                <Brain className="w-7 h-7" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl">
+                  B-Max AI Health Assistant
+                </CardTitle>
+                <CardDescription className="text-base">
+                  Complete your health profile for personalized AI insights
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="w-full bg-white">
+              <iframe
+                src="https://www.jotform.com/app/253583637449470"
+                title="B-Max AI Health Form"
+                className="w-full border-0"
+                style={{ minHeight: '800px', height: '100vh' }}
+                allow="accelerometer; autoplay; camera; clipboard-write; encrypted-media; gyroscope; microphone; payment"
+                loading="lazy"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
       <Card className="shadow-colored-lg border-border/50">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
