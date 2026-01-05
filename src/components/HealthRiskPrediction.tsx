@@ -387,8 +387,26 @@ export default function HealthRiskPrediction() {
     fullMark: 100,
   }));
 
+  const handleBackToMenu = () => {
+    window.location.href = window.location.origin;
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-6">
+      {/* Back to Menu Button */}
+      <div className="max-w-7xl mx-auto mb-6">
+        <Button
+          onClick={handleBackToMenu}
+          variant="outline"
+          className="flex items-center gap-2 hover:bg-gray-100"
+          data-testid="back-to-menu-btn"
+        >
+          <Home className="w-4 h-4" />
+          Back to Menu
+        </Button>
+      </div>
+
+      <div className="max-w-7xl mx-auto space-y-6">
       <Card className="shadow-colored-lg border-border/50">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
