@@ -2,34 +2,34 @@
 
 ## Common Issues and Solutions
 
-### 1. "Blocked request. This host is not allowed" Error
+### 1. "Blocked request. This host is not allowed" Error (DEPLOYMENT CRITICAL)
 
 **Problem:**
 ```
-Blocked request. This host ("deployment-ready-6.preview.emergentagent.com") is not allowed.
-To allow this host, add "deployment-ready-6.preview.emergentagent.com" to `server.allowedHosts` in vite.config.js.
+Blocked request. This host ("your-app-name.emergent.host") is not allowed.
+To allow this host, add "your-app-name.emergent.host" to `server.allowedHosts` in vite.config.js.
 ```
 
+**Root Cause:**
+Hardcoded specific domain names in the `allowedHosts` array prevent the application from working on different deployment domains.
+
 **Solution:**
-This error occurs when Vite's dev server blocks requests from domains that aren't explicitly allowed. The fix has already been applied in `vite.config.ts`:
+✅ **FIXED** - The `vite.config.ts` now uses wildcard patterns:
 
 ```typescript
 server: {
   host: '0.0.0.0',
   port: 3000,
   allowedHosts: [
-    'deployment-ready-6.preview.emergentagent.com',
-    '.preview.emergentagent.com',  // Allows all *.preview.emergentagent.com
+    '.emergent.host',              // ✅ Allows all *.emergent.host domains
+    '.preview.emergentagent.com',  // ✅ Allows all preview domains
     'localhost',
     '127.0.0.1'
   ],
 }
 ```
 
-If you encounter this with a different domain, add it to the `allowedHosts` array and restart the server:
-```bash
-sudo supervisorctl restart vite-app
-```
+**Important**: Never add specific subdomains (e.g., `deployment-ready-6.preview.emergentagent.com`) as this will break deployment on different app names. Always use wildcard patterns (`.emergent.host`).
 
 ---
 
