@@ -722,6 +722,40 @@ export default function HealthHistory() {
           </TabsList>
 
           <TabsContent value="records" className="space-y-6">
+            {/* Add Record Feature Card */}
+            <Card 
+              className="card-hover shadow-colored border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 cursor-pointer transition-all hover:shadow-lg hover:border-primary/40"
+              onClick={() => setIsDialogOpen(true)}
+              data-testid="add-record-card"
+            >
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg">
+                      <Plus className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-foreground mb-1">Add New Health Record</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Create a new record secured on the blockchain with file attachments
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    className="btn-smooth shadow-colored px-6" 
+                    data-testid="add-record-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDialogOpen(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Record
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in">
               <Card className="card-hover shadow-colored border-border/50">
                 <CardHeader className="pb-3">
