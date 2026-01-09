@@ -660,11 +660,11 @@ export default function HealthHistory() {
                       <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                         Cancel
                       </Button>
-                      <Button type="submit" disabled={isSubmitting} className="btn-smooth shadow-colored">
-                        {isSubmitting ? (
+                      <Button type="submit" disabled={isSubmitting || isUploading} className="btn-smooth shadow-colored" data-testid="save-record-button">
+                        {isSubmitting || isUploading ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Saving...
+                            {isUploading ? 'Uploading...' : 'Saving...'}
                           </>
                         ) : (
                           <>
