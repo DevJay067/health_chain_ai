@@ -143,37 +143,22 @@ export default function HealthHistory() {
   const loadInitialData = async () => {
     try {
       setIsLoading(true);
-      // Try to load from Supabase, fallback to demo records
-      let recordsToDisplay: HealthRecord[] = [];
-      try {
-        const client = (window as any).supabaseClient;
-        if (client) {
-          const { data, error } = await client
-            .from('health_records')
-            .select('*')
-            .order('date', { ascending: false })
-            .limit(50);
-          if (!error && data && data.length > 0) {
-            recordsToDisplay = data.map((r: any) => ({
-              id: r.id,
-              type: r.type,
-              title: r.title,
-              description: r.description,
-              date: r.date,
-              doctor: r.doctor,
-              isSecure: r.is_secure,
-              blockchainHash: r.blockchain_hash,
-              metadata: r.metadata,
-            }));
-          }
-        }
-      } catch (e) {
-        console.warn('Supabase unavailable, using demo records');
-      }
+      // Load records from backend
+      const response = await fetch(`${API_URL}/api/records`);
       
-      // Fallback to demo records if empty
-      if (recordsToDisplay.length === 0) {
-        recordsToDisplay = [
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.records) {
+          setRecords(data.records);
+          setStats({
+            totalRecords: data.records.length,
+            secureRecords: data.records.filter((r: HealthRecord) => r.is_secure).length,
+            lastUpdate: new Date().toISOString(),
+          });
+        }
+      } else {
+        // Fallback to demo records if backend is unavailable
+        const demoRecords: HealthRecord[] = [
           {
             id: "1",
             type: "checkup",
@@ -181,8 +166,9 @@ export default function HealthHistory() {
             description: "Comprehensive annual checkup with all vitals checked",
             date: "2024-12-20",
             doctor: "Dr. Smith",
-            isSecure: true,
-            blockchainHash: "0x123abc...",
+            is_secure: true,
+            blockchain_hash: "0x00123abc...",
+            blockchain_index: 1,
             metadata: {
               weight: "72",
               height: "180",
@@ -193,16 +179,42 @@ export default function HealthHistory() {
             },
           },
         ];
+        setRecords(demoRecords);
+        setStats({
+          totalRecords: demoRecords.length,
+          secureRecords: demoRecords.filter((r) => r.is_secure).length,
+          lastUpdate: new Date().toISOString(),
+        });
       }
-      setRecords(recordsToDisplay);
-      setStats({
-        totalRecords: recordsToDisplay.length,
-        secureRecords: recordsToDisplay.filter((r) => r.isSecure).length,
-        lastUpdate: new Date().toISOString(),
-      });
     } catch (error) {
       console.error("Error loading records:", error);
-      setMessage({ type: "error", text: "Failed to load health records" });
+      setMessage({ type: "error", text: "Failed to load health records. Using demo data." });
+      // Fallback to demo records
+      const demoRecords: HealthRecord[] = [
+        {
+          id: "1",
+          type: "checkup",
+          title: "Annual Physical Exam",
+          description: "Comprehensive annual checkup with all vitals checked",
+          date: "2024-12-20",
+          doctor: "Dr. Smith",
+          is_secure: true,
+          blockchain_hash: "0x00123abc...",
+          blockchain_index: 1,
+          metadata: {
+            weight: "72",
+            height: "180",
+            bloodPressure: "120/80",
+            heartRate: "72",
+          },
+        },
+      ];
+      setRecords(demoRecords);
+      setStats({
+        totalRecords: demoRecords.length,
+        secureRecords: demoRecords.filter((r) => r.is_secure).length,
+        lastUpdate: new Date().toISOString(),
+      });
     } finally {
       setIsLoading(false);
     }
