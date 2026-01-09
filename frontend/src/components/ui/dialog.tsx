@@ -5,15 +5,14 @@ const Dialog = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElem
   ({ className, open, onOpenChange, children, ...props }, ref) => {
     if (!open) return null
     return (
-      <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={() => onOpenChange?.(false)}>
-        <div className="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]" onClick={(e) => e.stopPropagation()}>
-          <div
-            ref={ref}
-            className={cn("grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg", className)}
-            {...props}
-          >
-            {children}
-          </div>
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => onOpenChange?.(false)}>
+        <div 
+          ref={ref}
+          className={cn("relative bg-white rounded-lg shadow-xl w-full max-h-[90vh] overflow-y-auto", className)}
+          onClick={(e) => e.stopPropagation()}
+          {...props}
+        >
+          {children}
         </div>
       </div>
     )
