@@ -59,7 +59,7 @@ import {
   X,
 } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 interface HealthRecord {
   id: string;
@@ -431,256 +431,259 @@ export default function HealthHistory() {
                 <Database className="w-3 h-3 mr-1" />
                 Blockchain Secured
               </Badge>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="btn-smooth shadow-colored" data-testid="add-record-button">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Record
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center space-x-2">
-                      <Plus className="w-5 h-5 text-primary" />
-                      <span>Add New Health Record</span>
-                    </DialogTitle>
-                    <DialogDescription>
-                      Create a new health record that will be securely stored
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="type">Record Type *</Label>
-                        <Select value={newRecord.type} onValueChange={(value) => setNewRecord((prev) => ({ ...prev, type: value }))}>
-                          <SelectTrigger className="focus-enhanced">
-                            <SelectValue placeholder="Select record type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {recordTypes.map((type) => (
-                              <SelectItem key={type.value} value={type.value}>
-                                <div className="flex items-center space-x-2">
-                                  <type.icon className="w-4 h-4" />
-                                  <span>{type.label}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="date">Date *</Label>
-                        <Input
-                          id="date"
-                          type="date"
-                          value={newRecord.date}
-                          onChange={(e) => setNewRecord((prev) => ({ ...prev, date: e.target.value }))}
-                          className="focus-enhanced"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="title">Title *</Label>
-                      <Input
-                        id="title"
-                        placeholder="e.g., Annual Physical Exam"
-                        value={newRecord.title}
-                        onChange={(e) => setNewRecord((prev) => ({ ...prev, title: e.target.value }))}
-                        className="focus-enhanced"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Description *</Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Detailed description..."
-                        value={newRecord.description}
-                        onChange={(e) => setNewRecord((prev) => ({ ...prev, description: e.target.value }))}
-                        rows={3}
-                        className="focus-enhanced"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="doctor">Healthcare Provider</Label>
-                      <Input
-                        id="doctor"
-                        placeholder="e.g., Dr. Smith"
-                        value={newRecord.doctor}
-                        onChange={(e) => setNewRecord((prev) => ({ ...prev, doctor: e.target.value }))}
-                        className="focus-enhanced"
-                      />
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <h4 className="font-medium text-foreground">Attachments (images/docs)</h4>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-center w-full">
-                          <label
-                            htmlFor="file-upload"
-                            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                              <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                              <p className="mb-2 text-sm text-muted-foreground">
-                                <span className="font-semibold">Click to upload</span> or drag and drop
-                              </p>
-                              <p className="text-xs text-muted-foreground">Max 5MB per file</p>
-                            </div>
-                            <input
-                              id="file-upload"
-                              type="file"
-                              className="hidden"
-                              multiple
-                              accept="image/*,.pdf,.doc,.docx"
-                              onChange={handleFileUpload}
-                            />
-                          </label>
-                        </div>
-
-                        {uploadedFiles.length > 0 && (
-                          <div className="space-y-2">
-                            {uploadedFiles.map((file, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center justify-between p-2 rounded-lg bg-muted/30"
-                              >
-                                <div className="flex items-center space-x-2">
-                                  <FileText className="w-4 h-4 text-muted-foreground" />
-                                  <div>
-                                    <p className="text-sm font-medium">{file.name}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {(file.size / 1024).toFixed(2)} KB
-                                    </p>
-                                  </div>
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeFile(index)}
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <h4 className="font-medium text-foreground">Additional Information (Optional)</h4>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="weight">Weight</Label>
-                          <div className="relative">
-                            <Weight className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="weight"
-                              placeholder="kg"
-                              value={newRecord.metadata.weight}
-                              onChange={(e) => setNewRecord((prev) => ({ ...prev, metadata: { ...prev.metadata, weight: e.target.value } }))}
-                              className="pl-10 focus-enhanced"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="height">Height</Label>
-                          <div className="relative">
-                            <Ruler className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="height"
-                              placeholder="cm"
-                              value={newRecord.metadata.height}
-                              onChange={(e) => setNewRecord((prev) => ({ ...prev, metadata: { ...prev.metadata, height: e.target.value } }))}
-                              className="pl-10 focus-enhanced"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="bloodPressure">Blood Pressure</Label>
-                          <div className="relative">
-                            <Heart className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="bloodPressure"
-                              placeholder="120/80"
-                              value={newRecord.metadata.bloodPressure}
-                              onChange={(e) => setNewRecord((prev) => ({ ...prev, metadata: { ...prev.metadata, bloodPressure: e.target.value } }))}
-                              className="pl-10 focus-enhanced"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="heartRate">Heart Rate</Label>
-                          <div className="relative">
-                            <Activity className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="heartRate"
-                              placeholder="bpm"
-                              value={newRecord.metadata.heartRate}
-                              onChange={(e) => setNewRecord((prev) => ({ ...prev, metadata: { ...prev.metadata, heartRate: e.target.value } }))}
-                              className="pl-10 focus-enhanced"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="notes">Additional Notes</Label>
-                        <Textarea
-                          id="notes"
-                          placeholder="Any additional notes..."
-                          value={newRecord.metadata.notes}
-                          onChange={(e) => setNewRecord((prev) => ({ ...prev, metadata: { ...prev.metadata, notes: e.target.value } }))}
-                          rows={2}
-                          className="focus-enhanced"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end space-x-3 pt-4 border-t">
-                      <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button type="submit" disabled={isSubmitting || isUploading} className="btn-smooth shadow-colored" data-testid="save-record-button">
-                        {isSubmitting || isUploading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            {isUploading ? 'Uploading...' : 'Saving...'}
-                          </>
-                        ) : (
-                          <>
-                            <Shield className="w-4 h-4 mr-2" />
-                            Save Securely
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
             </div>
           </div>
         </div>
       </header>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <button
+            onClick={() => setIsDialogOpen(false)}
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 z-10"
+            data-testid="close-dialog-button"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </button>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2 text-xl">
+              <Plus className="w-5 h-5 text-primary" />
+              <span>Add New Health Record</span>
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Create a new health record that will be securely stored on the blockchain.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">Record Type *</Label>
+                <Select value={newRecord.type} onValueChange={(value) => setNewRecord((prev) => ({ ...prev, type: value }))}>
+                  <SelectTrigger className="focus-enhanced">
+                    <SelectValue placeholder="Select record type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {recordTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        <div className="flex items-center space-x-2">
+                          <type.icon className="w-4 h-4" />
+                          <span>{type.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="date">Date *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={newRecord.date}
+                  onChange={(e) => setNewRecord((prev) => ({ ...prev, date: e.target.value }))}
+                  className="focus-enhanced"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                placeholder="e.g., Annual Physical Exam"
+                value={newRecord.title}
+                onChange={(e) => setNewRecord((prev) => ({ ...prev, title: e.target.value }))}
+                className="focus-enhanced"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description *</Label>
+              <Textarea
+                id="description"
+                placeholder="Detailed description..."
+                value={newRecord.description}
+                onChange={(e) => setNewRecord((prev) => ({ ...prev, description: e.target.value }))}
+                rows={3}
+                className="focus-enhanced"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="doctor">Healthcare Provider</Label>
+              <Input
+                id="doctor"
+                placeholder="e.g., Dr. Smith"
+                value={newRecord.doctor}
+                onChange={(e) => setNewRecord((prev) => ({ ...prev, doctor: e.target.value }))}
+                className="focus-enhanced"
+              />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h4 className="font-medium text-foreground">Attachments (images/docs)</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-center w-full">
+                  <label
+                    htmlFor="file-upload"
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                      <p className="mb-2 text-sm text-muted-foreground">
+                        <span className="font-semibold">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-muted-foreground">Max 5MB per file</p>
+                    </div>
+                    <input
+                      id="file-upload"
+                      type="file"
+                      className="hidden"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx"
+                      onChange={handleFileUpload}
+                    />
+                  </label>
+                </div>
+
+                {uploadedFiles.length > 0 && (
+                  <div className="space-y-2">
+                    {uploadedFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 rounded-lg bg-muted/30"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <FileText className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.size / 1024).toFixed(2)} KB
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h4 className="font-medium text-foreground">Additional Information (Optional)</h4>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Weight</Label>
+                  <div className="relative">
+                    <Weight className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="weight"
+                      placeholder="kg"
+                      value={newRecord.metadata.weight}
+                      onChange={(e) => setNewRecord((prev) => ({ ...prev, metadata: { ...prev.metadata, weight: e.target.value } }))}
+                      className="pl-10 focus-enhanced"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="height">Height</Label>
+                  <div className="relative">
+                    <Ruler className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="height"
+                      placeholder="cm"
+                      value={newRecord.metadata.height}
+                      onChange={(e) => setNewRecord((prev) => ({ ...prev, metadata: { ...prev.metadata, height: e.target.value } }))}
+                      className="pl-10 focus-enhanced"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bloodPressure">Blood Pressure</Label>
+                  <div className="relative">
+                    <Heart className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="bloodPressure"
+                      placeholder="120/80"
+                      value={newRecord.metadata.bloodPressure}
+                      onChange={(e) => setNewRecord((prev) => ({ ...prev, metadata: { ...prev.metadata, bloodPressure: e.target.value } }))}
+                      className="pl-10 focus-enhanced"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="heartRate">Heart Rate</Label>
+                  <div className="relative">
+                    <Activity className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="heartRate"
+                      placeholder="bpm"
+                      value={newRecord.metadata.heartRate}
+                      onChange={(e) => setNewRecord((prev) => ({ ...prev, metadata: { ...prev.metadata, heartRate: e.target.value } }))}
+                      className="pl-10 focus-enhanced"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Additional Notes</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Any additional notes..."
+                  value={newRecord.metadata.notes}
+                  onChange={(e) => setNewRecord((prev) => ({ ...prev, metadata: { ...prev.metadata, notes: e.target.value } }))}
+                  rows={2}
+                  className="focus-enhanced"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting || isUploading} className="btn-smooth shadow-colored" data-testid="save-record-button">
+                {isSubmitting || isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {isUploading ? 'Uploading...' : 'Saving...'}
+                  </>
+                ) : (
+                  <>
+                    <Shield className="w-4 h-4 mr-2" />
+                    Save Securely
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {message && (
         <div className="container mx-auto px-4 pt-4">
@@ -715,6 +718,40 @@ export default function HealthHistory() {
           </TabsList>
 
           <TabsContent value="records" className="space-y-6">
+            {/* Add Record Feature Card */}
+            <Card 
+              className="card-hover shadow-colored border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 cursor-pointer transition-all hover:shadow-lg hover:border-primary/40"
+              onClick={() => setIsDialogOpen(true)}
+              data-testid="add-record-card"
+            >
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg">
+                      <Plus className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-foreground mb-1">Add New Health Record</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Create a new record secured on the blockchain with file attachments
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    className="btn-smooth shadow-colored px-6" 
+                    data-testid="add-record-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDialogOpen(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Record
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in">
               <Card className="card-hover shadow-colored border-border/50">
                 <CardHeader className="pb-3">
