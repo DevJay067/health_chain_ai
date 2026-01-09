@@ -24,7 +24,7 @@ Dialog.displayName = "Dialog"
 
 const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("p-6", className)} {...props} />
+    <div ref={ref} className={cn("p-6 max-h-[85vh] overflow-y-auto", className)} {...props} />
   )
 )
 DialogContent.displayName = "DialogContent"
