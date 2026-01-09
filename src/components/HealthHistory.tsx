@@ -55,7 +55,11 @@ import {
   SortDesc,
   MoreHorizontal,
   Database,
+  Upload,
+  X,
 } from "lucide-react";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8001";
 
 interface HealthRecord {
   id: string;
