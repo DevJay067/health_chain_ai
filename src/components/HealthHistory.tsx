@@ -884,7 +884,7 @@ export default function HealthHistory() {
                               </div>
 
                               <div className="flex items-center space-x-2">
-                                {record.isSecure && (
+                                {record.is_secure && (
                                   <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
                                     <Lock className="w-3 h-3 mr-1" />
                                     Secure
@@ -897,6 +897,29 @@ export default function HealthHistory() {
                             </div>
 
                             <p className="text-muted-foreground mb-3 line-clamp-2">{record.description}</p>
+
+                            {record.blockchain_hash && (
+                              <div className="mb-3 p-2 rounded-lg bg-green-50 border border-green-200">
+                                <div className="flex items-center space-x-2 text-xs">
+                                  <Database className="w-3 h-3 text-green-600" />
+                                  <span className="text-green-700 font-medium">
+                                    Block #{record.blockchain_index}
+                                  </span>
+                                  <span className="text-green-600 font-mono truncate">
+                                    {record.blockchain_hash.substring(0, 16)}...
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {record.attachments && record.attachments.length > 0 && (
+                              <div className="mb-3 flex items-center space-x-2">
+                                <FileText className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">
+                                  {record.attachments.length} attachment{record.attachments.length > 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            )}
 
                             {record.metadata && Object.keys(record.metadata).some((key) => record.metadata[key]) && (
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm bg-muted/30 rounded-lg p-3">
