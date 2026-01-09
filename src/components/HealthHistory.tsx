@@ -85,11 +85,13 @@ export default function HealthHistory() {
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("all");
   const [sortBy, setSortBy] = useState("date");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
