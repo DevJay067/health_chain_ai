@@ -68,9 +68,17 @@ interface HealthRecord {
   description: string;
   date: string;
   doctor?: string;
-  isSecure?: boolean;
-  blockchainHash?: string;
+  is_secure?: boolean;
+  blockchain_hash?: string;
+  blockchain_index?: number;
+  data_hash?: string;
   metadata?: any;
+  attachments?: Array<{
+    name: string;
+    type: string;
+    size: number;
+    hash: string;
+  }>;
 }
 
 export default function HealthHistory() {
