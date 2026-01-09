@@ -220,78 +220,120 @@ export default function HealthHistory() {
     }
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      // Limit to 5MB per file
+      const validFiles = newFiles.filter(file => {
+        if (file.size > 5 * 1024 * 1024) {
+          setMessage({ type: "error", text: `${file.name} exceeds 5MB limit` });
+          return false;
+        }
+        return true;
+      });
+      setUploadedFiles(prev => [...prev, ...validFiles]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage(null);
 
     try {
-      const newRecordData: HealthRecord = {
-        id: Date.now().toString(),
+      // Upload files first if any
+      const attachments = [];
+      if (uploadedFiles.length > 0) {
+        setIsUploading(true);
+        for (const file of uploadedFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          const uploadResponse = await fetch(`${API_URL}/api/upload`, {
+            method: 'POST',
+            body: formData,
+          });
+          
+          if (uploadResponse.ok) {
+            const uploadData = await uploadResponse.json();
+            attachments.push({
+              name: uploadData.file_name,
+              type: uploadData.file_type,
+              size: uploadData.file_size,
+              hash: uploadData.file_hash,
+            });
+          }
+        }
+        setIsUploading(false);
+      }
+
+      // Create health record
+      const recordData = {
         type: newRecord.type,
         title: newRecord.title,
         description: newRecord.description,
         date: newRecord.date,
         doctor: newRecord.doctor,
-        isSecure: true,
-        blockchainHash: `0x${Math.random().toString(16).slice(2)}`,
         metadata: newRecord.metadata,
+        attachments: attachments.length > 0 ? attachments : undefined,
       };
 
-      // Try to save to Supabase
-      try {
-        const client = (window as any).supabaseClient;
-        if (client) {
-          await client.from('health_records').insert({
-            id: newRecordData.id,
-            type: newRecordData.type,
-            title: newRecordData.title,
-            description: newRecordData.description,
-            date: newRecordData.date,
-            doctor: newRecordData.doctor,
-            is_secure: newRecordData.isSecure,
-            blockchain_hash: newRecordData.blockchainHash,
-            metadata: newRecordData.metadata,
-            created_at: new Date().toISOString(),
-          });
-        }
-      } catch (supabaseError) {
-        console.warn('Supabase save failed, storing locally', supabaseError);
+      const response = await fetch(`${API_URL}/api/records`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(recordData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save record');
       }
 
-      setRecords((prev) => [newRecordData, ...prev]);
-      setMessage({
-        type: "success",
-        text: "Health record saved securely!",
-      });
-      setIsDialogOpen(false);
-      setNewRecord({
-        type: "",
-        title: "",
-        description: "",
-        date: new Date().toISOString().split("T")[0],
-        doctor: "",
-        metadata: {
-          weight: "",
-          height: "",
-          bloodPressure: "",
-          heartRate: "",
-          temperature: "",
-          notes: "",
-        },
-      });
+      const result = await response.json();
 
-      setStats((prev) => ({
-        ...prev,
-        totalRecords: prev.totalRecords + 1,
-        secureRecords: prev.secureRecords + 1,
-        lastUpdate: new Date().toISOString(),
-      }));
+      if (result.success) {
+        setRecords((prev) => [result.record, ...prev]);
+        setMessage({
+          type: "success",
+          text: `✓ Record saved securely on blockchain! Block #${result.blockchain_proof.index}`,
+        });
+        setIsDialogOpen(false);
+        setNewRecord({
+          type: "",
+          title: "",
+          description: "",
+          date: new Date().toISOString().split("T")[0],
+          doctor: "",
+          metadata: {
+            weight: "",
+            height: "",
+            bloodPressure: "",
+            heartRate: "",
+            temperature: "",
+            notes: "",
+          },
+        });
+        setUploadedFiles([]);
+
+        setStats((prev) => ({
+          ...prev,
+          totalRecords: prev.totalRecords + 1,
+          secureRecords: prev.secureRecords + 1,
+          lastUpdate: new Date().toISOString(),
+        }));
+      }
     } catch (error) {
       console.error("Error saving record:", error);
-      setMessage({ type: "error", text: "Failed to save record" });
+      setMessage({ type: "error", text: "Failed to save record. Please try again." });
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
