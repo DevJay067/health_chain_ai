@@ -522,6 +522,65 @@ export default function HealthHistory() {
                     <Separator />
 
                     <div className="space-y-4">
+                      <h4 className="font-medium text-foreground">Attachments (images/docs)</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-center w-full">
+                          <label
+                            htmlFor="file-upload"
+                            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                              <p className="mb-2 text-sm text-muted-foreground">
+                                <span className="font-semibold">Click to upload</span> or drag and drop
+                              </p>
+                              <p className="text-xs text-muted-foreground">Max 5MB per file</p>
+                            </div>
+                            <input
+                              id="file-upload"
+                              type="file"
+                              className="hidden"
+                              multiple
+                              accept="image/*,.pdf,.doc,.docx"
+                              onChange={handleFileUpload}
+                            />
+                          </label>
+                        </div>
+
+                        {uploadedFiles.length > 0 && (
+                          <div className="space-y-2">
+                            {uploadedFiles.map((file, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-2 rounded-lg bg-muted/30"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <FileText className="w-4 h-4 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm font-medium">{file.name}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {(file.size / 1024).toFixed(2)} KB
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeFile(index)}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-4">
                       <h4 className="font-medium text-foreground">Additional Information (Optional)</h4>
 
                       <div className="grid grid-cols-2 gap-4">
