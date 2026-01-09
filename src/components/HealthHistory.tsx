@@ -433,7 +433,7 @@ export default function HealthHistory() {
               </Badge>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="btn-smooth shadow-colored">
+                  <Button className="btn-smooth shadow-colored" data-testid="add-record-button">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Record
                   </Button>
