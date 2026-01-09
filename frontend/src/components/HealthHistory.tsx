@@ -431,15 +431,12 @@ export default function HealthHistory() {
                 <Database className="w-3 h-3 mr-1" />
                 Blockchain Secured
               </Badge>
-              <Button 
-                className="btn-smooth shadow-colored" 
-                data-testid="add-record-button"
-                onClick={() => setIsDialogOpen(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Record
-              </Button>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                   <button
                     onClick={() => setIsDialogOpen(false)}
