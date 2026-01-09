@@ -1,19 +1,15 @@
 [build]
-  command = "npm run build"
-  functions = "netlify/functions"
-  publish = "dist"
+  base = "frontend"
+  command = "yarn build"
+  publish = "frontend/dist"
 
 [[redirects]]
-  from = "/first-aid"
-  to = "https://www.jotform.com/app/253583637449470"
-  status = 301
+  from = "/api/*"
+  to = "https://fbc534da-6cb9-4276-abe9-9c8214a38e5b.preview.emergentagent.com/api/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
-  from = "/monitoring"
-  to = "https://www.jotform.com/app/253583637449470"
-  status = 301
-
-[[redirects]]
-  from = "/history"
-  to = "https://www.jotform.com/app/253583637449470"
-  status = 301
+  from = "/*"
+  to = "/index.html"
+  status = 200
