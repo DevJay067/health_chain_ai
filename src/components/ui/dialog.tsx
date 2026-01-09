@@ -4,16 +4,30 @@ import { cn } from "@/lib/utils"
 const Dialog = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & { open?: boolean; onOpenChange?: (open: boolean) => void }>(
   ({ className, open, onOpenChange, children, ...props }, ref) => {
     if (!open) return null
+    
+    React.useEffect(() => {
+      if (open) {
+        document.body.style.overflow = 'hidden'
+      } else {
+        document.body.style.overflow = 'unset'
+      }
+      return () => {
+        document.body.style.overflow = 'unset'
+      }
+    }, [open])
+    
     return (
-      <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={() => onOpenChange?.(false)}>
-        <div className="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]" onClick={(e) => e.stopPropagation()}>
-          <div
-            ref={ref}
-            className={cn("grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg", className)}
-            {...props}
-          >
-            {children}
-          </div>
+      <div 
+        className="fixed inset-0 z-[100] flex items-start justify-center pt-10 pb-10 px-4 bg-black/70 backdrop-blur-sm overflow-y-auto"
+        onClick={() => onOpenChange?.(false)}
+      >
+        <div 
+          ref={ref}
+          className={cn("relative bg-white rounded-xl shadow-2xl w-full max-w-3xl my-auto animate-in fade-in zoom-in duration-200", className)}
+          onClick={(e) => e.stopPropagation()}
+          {...props}
+        >
+          {children}
         </div>
       </div>
     )
@@ -23,7 +37,7 @@ Dialog.displayName = "Dialog"
 
 const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("grid gap-4", className)} {...props} />
+    <div ref={ref} className={cn("p-8 max-h-[80vh] overflow-y-auto", className)} {...props} />
   )
 )
 DialogContent.displayName = "DialogContent"
