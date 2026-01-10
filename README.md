@@ -59,7 +59,7 @@ This project uses a modern, high-performance stack:
 * **Build Tool:** [Vite](https://vitejs.dev/)
 * **Styling:** [Tailwind CSS](https://tailwindcss.com/) & [Lucide Icons](https://lucide.dev/)
 * **Components:** Custom component library (inspired by shadcn/ui)
-* **Backend:** [Supabase](https://supabase.com/) (Auth & Database)
+* **Backend:** [firebase db] (Auth & Database)
 * **Charts:** [Recharts](https://recharts.org/)
 
 ---
