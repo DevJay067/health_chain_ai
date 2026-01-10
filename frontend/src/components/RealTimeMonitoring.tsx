@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,7 +23,6 @@ import {
   AlertTriangle,
   CheckCircle,
   TrendingUp,
-  TrendingDown,
   Clock,
   Smartphone,
   Watch,
@@ -31,7 +30,6 @@ import {
   Bluetooth,
   BarChart3,
   Navigation,
-  Plus,
   MapPin,
   Phone,
   Star,
@@ -44,7 +42,6 @@ import {
   Shield,
   Footprints,
   Flame,
-  Moon,
 } from "lucide-react";
 import BluetoothHealthMonitor from "@/components/BluetoothHealthMonitor";
 import {
@@ -57,19 +54,32 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Chart } from "react-google-charts";
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow, DirectionsRenderer } from "@react-google-maps/api";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-// Google Maps configuration
-const mapContainerStyle = {
-  width: '100%',
-  height: '400px',
-  borderRadius: '12px'
-};
+// Fix Leaflet default marker icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
-const defaultCenter = {
-  lat: 40.7128,
-  lng: -74.0060
-};
+// Custom emergency hospital icon
+const emergencyIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#ef4444"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>`),
+  iconSize: [36, 36],
+  iconAnchor: [18, 36],
+  popupAnchor: [0, -36],
+});
+
+const userIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#3b82f6"><circle cx="12" cy="12" r="8"/></svg>`),
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+  popupAnchor: [0, -12],
+});
 
 // Emergency hospitals data
 const emergencyHospitals = [
@@ -91,12 +101,7 @@ interface VitalSigns {
 interface Device {
   id: string;
   name: string;
-  type:
-    | "smartwatch"
-    | "fitness_tracker"
-    | "blood_pressure"
-    | "thermometer"
-    | "pulse_oximeter";
+  type: string;
   status: "connected" | "disconnected" | "syncing";
   battery: number;
   lastSync: string;
@@ -134,9 +139,7 @@ export default function RealTimeMonitoring() {
   const [vitalsHistory, setVitalsHistory] = useState<any[]>([]);
   const [showBluetoothDialog, setShowBluetoothDialog] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const [selectedHospital, setSelectedHospital] = useState<any>(null);
-  const [userLocation, setUserLocation] = useState(defaultCenter);
-  const [firebaseConnected, setFirebaseConnected] = useState(true);
+  const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]);
   const [cloudIoTStatus, setCloudIoTStatus] = useState<'connected' | 'syncing' | 'disconnected'>('connected');
   
   // Google Fit realtime state
@@ -157,7 +160,7 @@ export default function RealTimeMonitoring() {
     deviceData: {},
   });
 
-  const [connectedDevices, setConnectedDevices] = useState<Device[]>([
+  const [connectedDevices] = useState<Device[]>([
     {
       id: "google_pixel_watch",
       name: "Google Pixel Watch 2",
@@ -223,21 +226,12 @@ export default function RealTimeMonitoring() {
     },
   ]);
 
-  // Google Maps loader
-  const { isLoaded: mapsLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: ""
-  });
-
   // Get user location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
         },
         () => {
           console.log("Using default location");
@@ -274,13 +268,13 @@ export default function RealTimeMonitoring() {
       });
 
       // Update Google Fit realtime
-      setGoogleFitRealtime({
-        steps: googleFitRealtime.steps + Math.floor(Math.random() * 50),
+      setGoogleFitRealtime(prev => ({
+        steps: prev.steps + Math.floor(Math.random() * 50),
         heartRate: newVitals.heartRate,
-        calories: googleFitRealtime.calories + Math.floor(Math.random() * 5),
-        activeMinutes: googleFitRealtime.activeMinutes + (Math.random() > 0.8 ? 1 : 0),
+        calories: prev.calories + Math.floor(Math.random() * 5),
+        activeMinutes: prev.activeMinutes + (Math.random() > 0.8 ? 1 : 0),
         lastUpdate: now.toISOString(),
-      });
+      }));
 
       setVitalsHistory((prev) => {
         const newHistory = [
@@ -318,7 +312,7 @@ export default function RealTimeMonitoring() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [googleFitRealtime]);
+  }, [alerts, connectedDevices.length]);
 
   // Google Charts data for real-time gauge
   const heartRateGaugeData = [
@@ -360,10 +354,7 @@ export default function RealTimeMonitoring() {
   };
 
   const heartRateStatus = getVitalStatus("heartRate", vitalSigns.heartRate);
-  const bpStatus = getVitalStatus(
-    "bloodPressure",
-    vitalSigns.bloodPressure.systolic,
-  );
+  const bpStatus = getVitalStatus("bloodPressure", vitalSigns.bloodPressure.systolic);
   const tempStatus = getVitalStatus("temperature", vitalSigns.temperature);
   const oxygenStatus = getVitalStatus("oxygenSat", vitalSigns.oxygenSaturation);
 
@@ -384,6 +375,10 @@ export default function RealTimeMonitoring() {
     window.dispatchEvent(new Event('navigate'));
   };
 
+  const openDirections = (lat: number, lng: number) => {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-50 page-transition">
       <header className="border-b border-border/40 glass backdrop-blur-xl sticky top-0 z-50">
@@ -399,12 +394,8 @@ export default function RealTimeMonitoring() {
                   <Activity className="h-6 w-6" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-slate-800">
-                    Real-time Health Monitoring
-                  </h1>
-                  <p className="text-sm text-slate-600 font-medium">
-                    Powered by Google Cloud IoT & Firebase
-                  </p>
+                  <h1 className="text-xl font-bold text-slate-800">Real-time Health Monitoring</h1>
+                  <p className="text-sm text-slate-600 font-medium">Powered by Google Cloud IoT & Firebase</p>
                 </div>
               </div>
             </div>
@@ -426,10 +417,7 @@ export default function RealTimeMonitoring() {
                 <Database className="w-3 h-3 mr-1" />
                 Firebase
               </Badge>
-              <Badge
-                variant="secondary"
-                className="bg-green-50 text-green-700 border-green-200"
-              >
+              <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
                 <div className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></div>
                 Live
               </Badge>
@@ -538,9 +526,7 @@ export default function RealTimeMonitoring() {
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="font-medium">
                   {alert.message}
-                  <span className="text-sm text-muted-foreground ml-2">
-                    • {alert.timestamp}
-                  </span>
+                  <span className="text-sm text-muted-foreground ml-2">• {alert.timestamp}</span>
                   <Badge variant="outline" className="ml-2 text-xs">{alert.source}</Badge>
                 </AlertDescription>
               </Alert>
@@ -554,17 +540,9 @@ export default function RealTimeMonitoring() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Heart className={`w-5 h-5 ${heartRateStatus.color}`} />
-                  <CardTitle className="text-sm font-medium">
-                    Heart Rate
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">Heart Rate</CardTitle>
                 </div>
-                <Badge
-                  variant={
-                    heartRateStatus.status === "normal"
-                      ? "default"
-                      : "destructive"
-                  }
-                >
+                <Badge variant={heartRateStatus.status === "normal" ? "default" : "destructive"}>
                   {heartRateStatus.status}
                 </Badge>
               </div>
@@ -586,15 +564,9 @@ export default function RealTimeMonitoring() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Activity className={`w-5 h-5 ${bpStatus.color}`} />
-                  <CardTitle className="text-sm font-medium">
-                    Blood Pressure
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">Blood Pressure</CardTitle>
                 </div>
-                <Badge
-                  variant={
-                    bpStatus.status === "normal" ? "default" : "destructive"
-                  }
-                >
+                <Badge variant={bpStatus.status === "normal" ? "default" : "destructive"}>
                   {bpStatus.status}
                 </Badge>
               </div>
@@ -602,9 +574,7 @@ export default function RealTimeMonitoring() {
             <CardContent>
               <div className="text-3xl font-bold mb-2 text-slate-800">
                 {vitalSigns.bloodPressure.systolic}
-                <span className="text-xl text-muted-foreground">
-                  /{vitalSigns.bloodPressure.diastolic}
-                </span>
+                <span className="text-xl text-muted-foreground">/{vitalSigns.bloodPressure.diastolic}</span>
                 <span className="text-lg text-muted-foreground ml-1">mmHg</span>
               </div>
               <div className="flex items-center text-sm text-muted-foreground">
@@ -619,15 +589,9 @@ export default function RealTimeMonitoring() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Thermometer className={`w-5 h-5 ${tempStatus.color}`} />
-                  <CardTitle className="text-sm font-medium">
-                    Temperature
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">Temperature</CardTitle>
                 </div>
-                <Badge
-                  variant={
-                    tempStatus.status === "normal" ? "default" : "destructive"
-                  }
-                >
+                <Badge variant={tempStatus.status === "normal" ? "default" : "destructive"}>
                   {tempStatus.status}
                 </Badge>
               </div>
@@ -649,15 +613,9 @@ export default function RealTimeMonitoring() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Droplets className={`w-5 h-5 ${oxygenStatus.color}`} />
-                  <CardTitle className="text-sm font-medium">
-                    Oxygen Saturation
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">Oxygen Saturation</CardTitle>
                 </div>
-                <Badge
-                  variant={
-                    oxygenStatus.status === "normal" ? "default" : "destructive"
-                  }
-                >
+                <Badge variant={oxygenStatus.status === "normal" ? "default" : "destructive"}>
                   {oxygenStatus.status}
                 </Badge>
               </div>
@@ -677,38 +635,23 @@ export default function RealTimeMonitoring() {
 
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 max-w-2xl">
-            <TabsTrigger
-              value="overview"
-              className="flex items-center space-x-2"
-            >
+            <TabsTrigger value="overview" className="flex items-center space-x-2">
               <BarChart3 className="h-4 w-4" />
               <span>Overview</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="google-charts"
-              className="flex items-center space-x-2"
-            >
+            <TabsTrigger value="google-charts" className="flex items-center space-x-2">
               <Activity className="h-4 w-4" />
               <span>Google Charts</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="emergency"
-              className="flex items-center space-x-2"
-            >
+            <TabsTrigger value="emergency" className="flex items-center space-x-2">
               <MapPin className="h-4 w-4" />
               <span>Emergency</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="bluetooth"
-              className="flex items-center space-x-2"
-            >
+            <TabsTrigger value="bluetooth" className="flex items-center space-x-2">
               <Bluetooth className="h-4 w-4" />
               <span>Devices</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="firebase"
-              className="flex items-center space-x-2"
-            >
+            <TabsTrigger value="firebase" className="flex items-center space-x-2">
               <Database className="h-4 w-4" />
               <span>Firebase</span>
             </TabsTrigger>
@@ -724,63 +667,19 @@ export default function RealTimeMonitoring() {
                       Live Vital Signs Trends
                       <Badge className="ml-2 bg-blue-100 text-blue-700">Google Cloud</Badge>
                     </CardTitle>
-                    <CardDescription>
-                      Real-time data streamed via Google Cloud IoT Core
-                    </CardDescription>
+                    <CardDescription>Real-time data streamed via Google Cloud IoT Core</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="h-80">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={vitalsHistory}>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            className="opacity-30"
-                            horizontal={true}
-                            vertical={true}
-                          />
-                          <XAxis
-                            dataKey="time"
-                            className="text-xs"
-                            axisLine={true}
-                            tickLine={true}
-                          />
-                          <YAxis
-                            className="text-xs"
-                            axisLine={true}
-                            tickLine={true}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "rgba(255, 255, 255, 0.95)",
-                              border: "1px solid #e2e8f0",
-                              borderRadius: "8px",
-                              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                            }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="heartRate"
-                            stroke="#ef4444"
-                            strokeWidth={2}
-                            dot={{ fill: "#ef4444", strokeWidth: 2, r: 4 }}
-                            name="Heart Rate (BPM)"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="oxygenSat"
-                            stroke="#3b82f6"
-                            strokeWidth={2}
-                            dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
-                            name="Oxygen (%)"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="systolic"
-                            stroke="#10b981"
-                            strokeWidth={2}
-                            dot={{ fill: "#10b981", strokeWidth: 2, r: 4 }}
-                            name="Systolic BP"
-                          />
+                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                          <XAxis dataKey="time" className="text-xs" />
+                          <YAxis className="text-xs" />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="heartRate" stroke="#ef4444" strokeWidth={2} name="Heart Rate" />
+                          <Line type="monotone" dataKey="oxygenSat" stroke="#3b82f6" strokeWidth={2} name="Oxygen %" />
+                          <Line type="monotone" dataKey="systolic" stroke="#10b981" strokeWidth={2} name="Systolic BP" />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
@@ -801,39 +700,23 @@ export default function RealTimeMonitoring() {
                     {connectedDevices.map((device) => {
                       const IconComponent = device.icon;
                       return (
-                        <div
-                          key={device.id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                        >
+                        <div key={device.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                           <div className="flex items-center space-x-3">
-                            <div
-                              className={`p-2 rounded-lg ${
-                                device.status === "connected"
-                                  ? "bg-green-100 text-green-600"
-                                  : device.status === "syncing"
-                                    ? "bg-yellow-100 text-yellow-600"
-                                    : "bg-red-100 text-red-600"
-                              }`}
-                            >
+                            <div className={`p-2 rounded-lg ${
+                              device.status === "connected" ? "bg-green-100 text-green-600" :
+                              device.status === "syncing" ? "bg-yellow-100 text-yellow-600" :
+                              "bg-red-100 text-red-600"
+                            }`}>
                               <IconComponent className="w-4 h-4" />
                             </div>
                             <div>
-                              <p className="font-medium text-sm">
-                                {device.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {device.lastSync}
-                              </p>
+                              <p className="font-medium text-sm">{device.name}</p>
+                              <p className="text-xs text-muted-foreground">{device.lastSync}</p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <div className="text-xs text-muted-foreground">
-                              {device.battery}%
-                            </div>
-                            <Progress
-                              value={device.battery}
-                              className="w-12 h-2"
-                            />
+                            <div className="text-xs text-muted-foreground">{device.battery}%</div>
+                            <Progress value={device.battery} className="w-12 h-2" />
                             {device.status === "connected" ? (
                               <Wifi className="w-4 h-4 text-green-600" />
                             ) : device.status === "syncing" ? (
@@ -854,7 +737,6 @@ export default function RealTimeMonitoring() {
           {/* Google Charts Tab */}
           <TabsContent value="google-charts" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Heart Rate Gauge */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -862,15 +744,12 @@ export default function RealTimeMonitoring() {
                     Heart Rate Monitor
                     <Badge className="ml-2 bg-yellow-100 text-yellow-700">Google Charts</Badge>
                   </CardTitle>
-                  <CardDescription>Real-time heart rate gauge</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Chart
                     chartType="Gauge"
                     data={heartRateGaugeData}
                     options={{
-                      width: 400,
-                      height: 280,
                       redFrom: 100,
                       redTo: 150,
                       yellowFrom: 85,
@@ -887,7 +766,6 @@ export default function RealTimeMonitoring() {
                 </CardContent>
               </Card>
 
-              {/* Oxygen Gauge */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -895,15 +773,12 @@ export default function RealTimeMonitoring() {
                     Oxygen Saturation
                     <Badge className="ml-2 bg-yellow-100 text-yellow-700">Google Charts</Badge>
                   </CardTitle>
-                  <CardDescription>Blood oxygen level gauge</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Chart
                     chartType="Gauge"
                     data={oxygenGaugeData}
                     options={{
-                      width: 400,
-                      height: 280,
                       redFrom: 85,
                       redTo: 92,
                       yellowFrom: 92,
@@ -920,7 +795,6 @@ export default function RealTimeMonitoring() {
                 </CardContent>
               </Card>
 
-              {/* Timeline Chart */}
               {vitalsHistory.length > 2 && (
                 <Card className="lg:col-span-2">
                   <CardHeader>
@@ -929,20 +803,16 @@ export default function RealTimeMonitoring() {
                       Vital Signs Timeline
                       <Badge className="ml-2 bg-yellow-100 text-yellow-700">Google Charts</Badge>
                     </CardTitle>
-                    <CardDescription>Historical data visualization</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Chart
                       chartType="LineChart"
                       data={timelineData}
                       options={{
-                        title: "",
                         curveType: "function",
                         legend: { position: "bottom" },
                         colors: ['#ef4444', '#3b82f6', '#10b981'],
                         chartArea: { width: '85%', height: '65%' },
-                        hAxis: { title: "Time" },
-                        vAxis: { title: "Value" },
                       }}
                       width="100%"
                       height="350px"
@@ -953,81 +823,75 @@ export default function RealTimeMonitoring() {
             </div>
           </TabsContent>
 
-          {/* Emergency Tab with Google Maps */}
+          {/* Emergency Tab with Leaflet/OpenStreetMap */}
           <TabsContent value="emergency" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <MapPin className="h-5 w-5 mr-2 text-red-600" />
                   Emergency Rooms Near You
-                  <Badge className="ml-2 bg-red-100 text-red-700">Google Maps</Badge>
+                  <Badge className="ml-2 bg-green-100 text-green-700">OpenStreetMap</Badge>
                 </CardTitle>
                 <CardDescription>Find the nearest emergency care with real-time wait times</CardDescription>
               </CardHeader>
               <CardContent>
-                {mapsLoaded ? (
-                  <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
+                <div className="rounded-xl overflow-hidden border border-gray-200" style={{ height: '400px' }}>
+                  <MapContainer
                     center={userLocation}
                     zoom={13}
+                    style={{ height: '100%', width: '100%' }}
                   >
-                    <Marker
-                      position={userLocation}
-                      icon={{
-                        url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%233b82f6'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3C/svg%3E",
-                        scaledSize: new google.maps.Size(24, 24),
-                      }}
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
                     
+                    {/* User location marker */}
+                    <Marker position={userLocation} icon={userIcon}>
+                      <Popup>
+                        <div className="text-center">
+                          <strong>Your Location</strong>
+                        </div>
+                      </Popup>
+                    </Marker>
+                    
+                    {/* Emergency hospital markers */}
                     {emergencyHospitals.map((hospital) => (
                       <Marker
                         key={hospital.id}
-                        position={{ lat: hospital.lat, lng: hospital.lng }}
-                        onClick={() => setSelectedHospital(hospital)}
-                        icon={{
-                          url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23ef4444'%3E%3Cpath d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z'/%3E%3C/svg%3E",
-                          scaledSize: new google.maps.Size(36, 36),
-                        }}
-                      />
-                    ))}
-
-                    {selectedHospital && (
-                      <InfoWindow
-                        position={{ lat: selectedHospital.lat, lng: selectedHospital.lng }}
-                        onCloseClick={() => setSelectedHospital(null)}
+                        position={[hospital.lat, hospital.lng]}
+                        icon={emergencyIcon}
                       >
-                        <div className="p-2 max-w-xs">
-                          <h3 className="font-bold text-lg text-red-600">{selectedHospital.name}</h3>
-                          <div className="flex items-center gap-2 my-2">
-                            <Badge className="bg-yellow-100 text-yellow-700">
-                              <Clock className="h-3 w-3 mr-1" />
-                              Wait: {selectedHospital.waitTime}
-                            </Badge>
-                            <Badge variant="outline">{selectedHospital.distance}</Badge>
+                        <Popup>
+                          <div className="p-1 min-w-[220px]">
+                            <h3 className="font-bold text-lg text-red-600">{hospital.name}</h3>
+                            <div className="flex items-center gap-2 my-2">
+                              <Badge className="bg-yellow-100 text-yellow-700">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Wait: {hospital.waitTime}
+                              </Badge>
+                              <Badge variant="outline">{hospital.distance}</Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {hospital.phone}
+                            </p>
+                            <div className="flex gap-2 mt-3">
+                              <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => window.open(`tel:${hospital.phone}`)}>
+                                <Phone className="h-4 w-4 mr-1" />
+                                Call
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => openDirections(hospital.lat, hospital.lng)}>
+                                <Navigation className="h-4 w-4 mr-1" />
+                                Directions
+                              </Button>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600 flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {selectedHospital.phone}
-                          </p>
-                          <div className="flex gap-2 mt-3">
-                            <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => window.open(`tel:${selectedHospital.phone}`)}>
-                              <Phone className="h-4 w-4 mr-1" />
-                              Call
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedHospital.lat},${selectedHospital.lng}`, '_blank')}>
-                              <Navigation className="h-4 w-4 mr-1" />
-                              Directions
-                            </Button>
-                          </div>
-                        </div>
-                      </InfoWindow>
-                    )}
-                  </GoogleMap>
-                ) : (
-                  <div className="h-96 bg-gray-100 rounded-xl flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                  </div>
-                )}
+                        </Popup>
+                      </Marker>
+                    ))}
+                  </MapContainer>
+                </div>
 
                 {/* Emergency List */}
                 <div className="mt-6 space-y-4">
@@ -1039,7 +903,6 @@ export default function RealTimeMonitoring() {
                     <div
                       key={hospital.id}
                       className="flex items-center justify-between p-4 border-2 border-red-100 rounded-xl hover:bg-red-50 cursor-pointer transition-colors"
-                      onClick={() => setSelectedHospital(hospital)}
                     >
                       <div className="flex items-center gap-4">
                         <div className="p-3 rounded-xl bg-red-100">
@@ -1057,16 +920,10 @@ export default function RealTimeMonitoring() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50" onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(`tel:${hospital.phone}`);
-                        }}>
+                        <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50" onClick={() => window.open(`tel:${hospital.phone}`)}>
                           <Phone className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${hospital.lat},${hospital.lng}`, '_blank');
-                        }}>
+                        <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => openDirections(hospital.lat, hospital.lng)}>
                           <Navigation className="h-4 w-4 mr-1" />
                           Go
                         </Button>
@@ -1092,7 +949,6 @@ export default function RealTimeMonitoring() {
                     Firebase Realtime Database
                     <Badge className="ml-2 bg-orange-100 text-orange-700">Live Sync</Badge>
                   </CardTitle>
-                  <CardDescription>Real-time health data synchronization</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="bg-gray-900 rounded-lg p-4 font-mono text-sm text-green-400 overflow-auto max-h-96">
@@ -1103,9 +959,7 @@ export default function RealTimeMonitoring() {
                       <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                       <span className="text-sm text-gray-600">Connected to Firebase</span>
                     </div>
-                    <Badge variant="outline">
-                      Path: /users/user_123/health
-                    </Badge>
+                    <Badge variant="outline">Path: /users/user_123/health</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -1117,7 +971,6 @@ export default function RealTimeMonitoring() {
                     Google Cloud Healthcare API
                     <Badge className="ml-2 bg-blue-100 text-blue-700">FHIR R4</Badge>
                   </CardTitle>
-                  <CardDescription>Healthcare data in FHIR format</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -1135,14 +988,6 @@ export default function RealTimeMonitoring() {
                       <div className="p-4 bg-gray-50 rounded-lg">
                         <p className="text-sm text-gray-500">Region</p>
                         <p className="font-semibold">us-central1</p>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500">Dataset</p>
-                        <p className="font-semibold">health-records</p>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500">Store Type</p>
-                        <p className="font-semibold">FHIR Store</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -1166,11 +1011,10 @@ export default function RealTimeMonitoring() {
                     Google Cloud Pub/Sub Alerts
                     <Badge className="ml-2 bg-green-100 text-green-700">Event Streaming</Badge>
                   </CardTitle>
-                  <CardDescription>Real-time health alerts via Pub/Sub messaging</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {alerts.map((alert, index) => (
+                    {alerts.map((alert) => (
                       <div key={alert.id} className={`p-4 rounded-lg border-l-4 ${
                         alert.severity === 'high' ? 'border-red-500 bg-red-50' :
                         alert.severity === 'medium' ? 'border-yellow-500 bg-yellow-50' :
@@ -1221,7 +1065,7 @@ export default function RealTimeMonitoring() {
               >
                 {isScanning ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Scanning...
                   </>
                 ) : (
