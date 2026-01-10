@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,11 +16,9 @@ import {
   ArrowLeft,
   TrendingUp,
   TrendingDown,
-  Calendar,
   Brain,
   Heart,
   Target,
-  Award,
   AlertCircle,
   CheckCircle,
   BarChart3,
@@ -30,7 +28,6 @@ import {
   Shield,
   RefreshCw,
   Loader2,
-  Sparkles,
   Info,
   AlertTriangle,
   MapPin,
@@ -39,7 +36,6 @@ import {
   Clock,
   Star,
   Cloud,
-  Smartphone,
   Watch,
   Footprints,
   Moon,
@@ -54,25 +50,41 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
 } from "recharts";
 import { Chart } from "react-google-charts";
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-// Google Maps configuration
-const mapContainerStyle = {
-  width: '100%',
-  height: '400px',
-  borderRadius: '12px'
-};
+// Fix Leaflet default marker icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
-const defaultCenter = {
-  lat: 40.7128,
-  lng: -74.0060
-};
+// Custom hospital icon
+const hospitalIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#ef4444"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>`),
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
+});
+
+const urgentCareIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#f59e0b"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>`),
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
+});
+
+const userIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#3b82f6"><circle cx="12" cy="12" r="8"/></svg>`),
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+  popupAnchor: [0, -12],
+});
 
 // Sample healthcare providers data
 const healthcareProviders = [
@@ -98,19 +110,16 @@ interface GoogleFitData {
 export default function HealthAnalytics() {
   const [selectedTimeframe, setSelectedTimeframe] = useState("month");
   const {
-    metrics,
     insights,
     trends,
     isLoading,
     error,
     getHealthScore,
-    getLatestMetric,
     refreshData,
   } = useHealthData();
 
   const [chartData, setChartData] = useState<any[]>([]);
-  const [selectedProvider, setSelectedProvider] = useState<any>(null);
-  const [userLocation, setUserLocation] = useState(defaultCenter);
+  const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]);
   const [googleFitData, setGoogleFitData] = useState<GoogleFitData>({
     steps: 8547,
     calories: 2150,
@@ -122,23 +131,13 @@ export default function HealthAnalytics() {
     connected: true,
   });
   const [isSyncingFit, setIsSyncingFit] = useState(false);
-  const [showGoogleFitConnect, setShowGoogleFitConnect] = useState(false);
-
-  // Google Maps loader
-  const { isLoaded: mapsLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: "" // Works in development without key
-  });
 
   // Get user location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
         },
         () => {
           console.log("Using default location");
@@ -320,6 +319,10 @@ export default function HealthAnalytics() {
     window.dispatchEvent(new Event('navigate'));
   };
 
+  const openDirections = (lat: number, lng: number) => {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-info/5">
       <header className="border-b border-border/40 bg-card/95 backdrop-blur sticky top-0 z-50">
@@ -336,7 +339,7 @@ export default function HealthAnalytics() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-foreground">Health Analytics</h1>
-                  <p className="text-sm text-muted-foreground">Powered by Google Cloud & AI</p>
+                  <p className="text-sm text-muted-foreground">Powered by Google Cloud & Gemini AI</p>
                 </div>
               </div>
             </div>
@@ -514,10 +517,7 @@ export default function HealthAnalytics() {
 
         <Tabs defaultValue="insights" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 max-w-2xl">
-            <TabsTrigger
-              value="insights"
-              className="flex items-center space-x-2"
-            >
+            <TabsTrigger value="insights" className="flex items-center space-x-2">
               <Zap className="h-4 w-4" />
               <span>Insights</span>
             </TabsTrigger>
@@ -545,20 +545,17 @@ export default function HealthAnalytics() {
                 <CardTitle className="flex items-center">
                   <Brain className="h-5 w-5 mr-2 text-primary" />
                   AI-Generated Health Insights
-                  <Badge className="ml-2 bg-blue-100 text-blue-700">Google Cloud AI</Badge>
+                  <Badge className="ml-2 bg-purple-100 text-purple-700">Gemini AI</Badge>
                 </CardTitle>
                 <CardDescription>
-                  Personalized recommendations powered by Google Cloud Healthcare API
+                  Personalized recommendations powered by Google Gemini AI
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {enhancedInsights.map((insight, index) => {
                   const IconComponent = insight.icon;
                   return (
-                    <Card
-                      key={index}
-                      className={`border-l-4 ${getInsightColor(insight.type)}`}
-                    >
+                    <Card key={index} className={`border-l-4 ${getInsightColor(insight.type)}`}>
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
@@ -573,34 +570,20 @@ export default function HealthAnalytics() {
                             />
                             <div>
                               <h3 className="font-semibold">{insight.title}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                {insight.description}
-                              </p>
+                              <p className="text-sm text-muted-foreground">{insight.description}</p>
                               <div className="flex items-center space-x-2 mt-1">
-                                <Badge variant="outline" className="text-xs">
-                                  {insight.category}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  Confidence: {insight.confidence}%
-                                </span>
+                                <Badge variant="outline" className="text-xs">{insight.category}</Badge>
+                                <span className="text-xs text-muted-foreground">Confidence: {insight.confidence}%</span>
                               </div>
                             </div>
                           </div>
-                          <Badge
-                            variant={
-                              insight.importance === "high"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                          >
+                          <Badge variant={insight.importance === "high" ? "destructive" : "secondary"}>
                             {insight.importance}
                           </Badge>
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <p className="text-sm font-medium text-primary">
-                          Recommended Action: {insight.action}
-                        </p>
+                        <p className="text-sm font-medium text-primary">Recommended Action: {insight.action}</p>
                       </CardContent>
                     </Card>
                   );
@@ -612,7 +595,6 @@ export default function HealthAnalytics() {
           {/* Google Charts Tab */}
           <TabsContent value="google-charts" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Google Pie Chart */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -620,14 +602,12 @@ export default function HealthAnalytics() {
                     Health Categories Distribution
                     <Badge className="ml-2 bg-yellow-100 text-yellow-700">Google Charts</Badge>
                   </CardTitle>
-                  <CardDescription>Breakdown of health scores by category</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Chart
                     chartType="PieChart"
                     data={googlePieData}
                     options={{
-                      title: "",
                       pieHole: 0.4,
                       colors: ['#3b82f6', '#8b5cf6', '#10b981', '#6366f1', '#f59e0b'],
                       legend: { position: 'bottom' },
@@ -639,7 +619,6 @@ export default function HealthAnalytics() {
                 </CardContent>
               </Card>
 
-              {/* Google Gauge Chart */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -647,15 +626,12 @@ export default function HealthAnalytics() {
                     Overall Health Score Gauge
                     <Badge className="ml-2 bg-yellow-100 text-yellow-700">Google Charts</Badge>
                   </CardTitle>
-                  <CardDescription>Your current health score visualization</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Chart
                     chartType="Gauge"
                     data={googleGaugeData}
                     options={{
-                      width: 400,
-                      height: 280,
                       redFrom: 0,
                       redTo: 40,
                       yellowFrom: 40,
@@ -670,7 +646,6 @@ export default function HealthAnalytics() {
                 </CardContent>
               </Card>
 
-              {/* Google Area Chart */}
               <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -678,14 +653,12 @@ export default function HealthAnalytics() {
                     Weekly Activity Overview
                     <Badge className="ml-2 bg-yellow-100 text-yellow-700">Google Charts</Badge>
                   </CardTitle>
-                  <CardDescription>Steps, calories and heart points from Google Fit</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Chart
                     chartType="AreaChart"
                     data={googleAreaData}
                     options={{
-                      title: "",
                       hAxis: { title: "Day" },
                       vAxis: { title: "Value" },
                       colors: ['#3b82f6', '#f59e0b', '#ef4444'],
@@ -698,208 +671,33 @@ export default function HealthAnalytics() {
                   />
                 </CardContent>
               </Card>
-
-              {/* Google Bar Chart */}
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Activity className="h-5 w-5 mr-2 text-orange-600" />
-                    Activity Comparison
-                    <Badge className="ml-2 bg-yellow-100 text-yellow-700">Google Charts</Badge>
-                  </CardTitle>
-                  <CardDescription>Compare your metrics across the week</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Chart
-                    chartType="BarChart"
-                    data={googleAreaData}
-                    options={{
-                      title: "",
-                      chartArea: { width: '70%', height: '70%' },
-                      colors: ['#3b82f6', '#f59e0b', '#ef4444'],
-                      legend: { position: 'right' },
-                      hAxis: {
-                        title: 'Value',
-                        minValue: 0,
-                      },
-                      vAxis: {
-                        title: 'Day',
-                      },
-                    }}
-                    width="100%"
-                    height="350px"
-                  />
-                </CardContent>
-              </Card>
             </div>
           </TabsContent>
 
           <TabsContent value="trends" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <LineChart className="h-5 w-5 mr-2" />
-                    Health Trends - {selectedTimeframe}
-                  </CardTitle>
-                  <CardDescription>
-                    Track your health metrics over time
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsLineChart data={chartData}>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          className="opacity-30"
-                          horizontal={true}
-                          vertical={true}
-                        />
-                        <XAxis
-                          dataKey="date"
-                          className="text-xs"
-                          axisLine={true}
-                          tickLine={true}
-                        />
-                        <YAxis
-                          className="text-xs"
-                          axisLine={true}
-                          tickLine={true}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "rgba(255, 255, 255, 0.95)",
-                            border: "1px solid #e2e8f0",
-                            borderRadius: "8px",
-                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                          }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="heartRate"
-                          stroke="#ef4444"
-                          strokeWidth={2}
-                          dot={{ fill: "#ef4444", strokeWidth: 2, r: 3 }}
-                          name="Heart Rate (BPM)"
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="steps"
-                          stroke="#3b82f6"
-                          strokeWidth={2}
-                          dot={{ fill: "#3b82f6", strokeWidth: 2, r: 3 }}
-                          name="Steps"
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="sleep"
-                          stroke="#10b981"
-                          strokeWidth={2}
-                          dot={{ fill: "#10b981", strokeWidth: 2, r: 3 }}
-                          name="Sleep (hours)"
-                        />
-                      </RechartsLineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <BarChart3 className="h-5 w-5 mr-2" />
-                    Activity Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {[
-                      {
-                        activity: "Steps",
-                        value: googleFitData.steps,
-                        target: 10000,
-                        unit: "steps",
-                      },
-                      {
-                        activity: "Sleep",
-                        value: googleFitData.sleepHours,
-                        target: 8,
-                        unit: "hours",
-                      },
-                      {
-                        activity: "Water",
-                        value: 6,
-                        target: 8,
-                        unit: "glasses",
-                      },
-                      {
-                        activity: "Exercise",
-                        value: googleFitData.activeMinutes,
-                        target: 60,
-                        unit: "minutes",
-                      },
-                    ].map((item, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>{item.activity}</span>
-                          <span>
-                            {typeof item.value === "number"
-                              ? item.value.toFixed(0)
-                              : item.value}{" "}
-                            / {item.target} {item.unit}
-                          </span>
-                        </div>
-                        <Progress
-                          value={(Number(item.value) / item.target) * 100}
-                          className="h-2"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <PieChart className="h-5 w-5 mr-2" />
-                    Health Categories
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {[
-                      {
-                        category: "Physical Health",
-                        score: 85,
-                        color: "bg-blue-500",
-                      },
-                      {
-                        category: "Mental Health",
-                        score: 78,
-                        color: "bg-purple-500",
-                      },
-                      { category: "Nutrition", score: 82, color: "bg-green-500" },
-                      { category: "Prevention", score: 95, color: "bg-cyan-500" },
-                    ].map((item, index) => (
-                      <div key={index} className="flex items-center space-x-3">
-                        <div
-                          className={`w-3 h-3 rounded-full ${item.color}`}
-                        ></div>
-                        <div className="flex-1">
-                          <div className="flex justify-between text-sm">
-                            <span>{item.category}</span>
-                            <span className="font-semibold">{item.score}%</span>
-                          </div>
-                          <Progress value={item.score} className="h-2 mt-1" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <LineChart className="h-5 w-5 mr-2" />
+                  Health Trends - {selectedTimeframe}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsLineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <XAxis dataKey="date" className="text-xs" />
+                      <YAxis className="text-xs" />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="heartRate" stroke="#ef4444" strokeWidth={2} name="Heart Rate" />
+                      <Line type="monotone" dataKey="steps" stroke="#3b82f6" strokeWidth={2} name="Steps" />
+                      <Line type="monotone" dataKey="sleep" stroke="#10b981" strokeWidth={2} name="Sleep (hours)" />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="predictions" className="space-y-6">
@@ -908,11 +706,8 @@ export default function HealthAnalytics() {
                 <CardTitle className="flex items-center">
                   <Shield className="h-5 w-5 mr-2 text-blue-600" />
                   Predictive Risk Analysis
-                  <Badge className="ml-2 bg-blue-100 text-blue-700">Google Cloud Healthcare API</Badge>
+                  <Badge className="ml-2 bg-purple-100 text-purple-700">Gemini AI</Badge>
                 </CardTitle>
-                <CardDescription>
-                  AI-powered risk assessment using Google Cloud
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {riskFactors.map((risk, index) => (
@@ -920,21 +715,15 @@ export default function HealthAnalytics() {
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-semibold">{risk.factor}</h3>
-                        <Badge className={getRiskColor(risk.level)}>
-                          {risk.level} risk
-                        </Badge>
+                        <Badge className={getRiskColor(risk.level)}>{risk.level} risk</Badge>
                       </div>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between text-sm">
                           <span>Risk Probability</span>
-                          <span className="font-semibold">
-                            {risk.probability}%
-                          </span>
+                          <span className="font-semibold">{risk.probability}%</span>
                         </div>
                         <Progress value={risk.probability} className="h-2" />
-                        <p className="text-sm text-muted-foreground">
-                          {risk.description}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{risk.description}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -943,83 +732,77 @@ export default function HealthAnalytics() {
             </Card>
           </TabsContent>
 
-          {/* Healthcare Providers with Google Maps */}
+          {/* Healthcare Providers with Leaflet/OpenStreetMap */}
           <TabsContent value="providers" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <MapPin className="h-5 w-5 mr-2 text-red-600" />
                   Nearby Healthcare Providers
-                  <Badge className="ml-2 bg-red-100 text-red-700">Google Maps</Badge>
+                  <Badge className="ml-2 bg-green-100 text-green-700">OpenStreetMap</Badge>
                 </CardTitle>
                 <CardDescription>Find hospitals and urgent care centers near you</CardDescription>
               </CardHeader>
               <CardContent>
-                {mapsLoaded ? (
-                  <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
+                <div className="rounded-xl overflow-hidden border border-gray-200" style={{ height: '400px' }}>
+                  <MapContainer
                     center={userLocation}
                     zoom={12}
+                    style={{ height: '100%', width: '100%' }}
                   >
-                    {/* User location marker */}
-                    <Marker
-                      position={userLocation}
-                      icon={{
-                        url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%233b82f6'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3C/svg%3E",
-                        scaledSize: new google.maps.Size(24, 24),
-                      }}
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
+                    
+                    {/* User location marker */}
+                    <Marker position={userLocation} icon={userIcon}>
+                      <Popup>
+                        <div className="text-center">
+                          <strong>Your Location</strong>
+                        </div>
+                      </Popup>
+                    </Marker>
                     
                     {/* Healthcare provider markers */}
                     {healthcareProviders.map((provider) => (
                       <Marker
                         key={provider.id}
-                        position={{ lat: provider.lat, lng: provider.lng }}
-                        onClick={() => setSelectedProvider(provider)}
-                        icon={{
-                          url: provider.type === "hospital" 
-                            ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23ef4444'%3E%3Cpath d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z'/%3E%3C/svg%3E"
-                            : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23f59e0b'%3E%3Cpath d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z'/%3E%3C/svg%3E",
-                          scaledSize: new google.maps.Size(32, 32),
-                        }}
-                      />
-                    ))}
-
-                    {selectedProvider && (
-                      <InfoWindow
-                        position={{ lat: selectedProvider.lat, lng: selectedProvider.lng }}
-                        onCloseClick={() => setSelectedProvider(null)}
+                        position={[provider.lat, provider.lng]}
+                        icon={provider.type === 'hospital' ? hospitalIcon : urgentCareIcon}
                       >
-                        <div className="p-2 max-w-xs">
-                          <h3 className="font-bold text-lg">{selectedProvider.name}</h3>
-                          <div className="flex items-center gap-1 my-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                            <span>{selectedProvider.rating}</span>
+                        <Popup>
+                          <div className="p-1 min-w-[200px]">
+                            <h3 className="font-bold text-lg">{provider.name}</h3>
+                            <div className="flex items-center gap-1 my-1">
+                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                              <span>{provider.rating}</span>
+                            </div>
+                            <p className="text-sm text-gray-600 flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {provider.phone}
+                            </p>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {provider.specialties.map((spec, idx) => (
+                                <span key={idx} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                                  {spec}
+                                </span>
+                              ))}
+                            </div>
+                            <Button
+                              size="sm"
+                              className="w-full mt-3"
+                              onClick={() => openDirections(provider.lat, provider.lng)}
+                            >
+                              <Navigation className="h-4 w-4 mr-1" />
+                              Get Directions
+                            </Button>
                           </div>
-                          <p className="text-sm text-gray-600 flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {selectedProvider.phone}
-                          </p>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {selectedProvider.specialties.map((spec: string, idx: number) => (
-                              <span key={idx} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                                {spec}
-                              </span>
-                            ))}
-                          </div>
-                          <Button size="sm" className="w-full mt-3" onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedProvider.lat},${selectedProvider.lng}`, '_blank')}>
-                            <Navigation className="h-4 w-4 mr-1" />
-                            Get Directions
-                          </Button>
-                        </div>
-                      </InfoWindow>
-                    )}
-                  </GoogleMap>
-                ) : (
-                  <div className="h-96 bg-gray-100 rounded-xl flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                  </div>
-                )}
+                        </Popup>
+                      </Marker>
+                    ))}
+                  </MapContainer>
+                </div>
 
                 {/* Provider List */}
                 <div className="mt-6 space-y-4">
@@ -1028,7 +811,6 @@ export default function HealthAnalytics() {
                     <div
                       key={provider.id}
                       className="flex items-center justify-between p-4 border rounded-xl hover:bg-gray-50 cursor-pointer transition-colors"
-                      onClick={() => setSelectedProvider(provider)}
                     >
                       <div className="flex items-center gap-4">
                         <div className={`p-3 rounded-xl ${provider.type === 'hospital' ? 'bg-red-100' : 'bg-yellow-100'}`}>
@@ -1044,10 +826,7 @@ export default function HealthAnalytics() {
                           </div>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(`https://www.google.com/maps/dir/?api=1&destination=${provider.lat},${provider.lng}`, '_blank');
-                      }}>
+                      <Button variant="outline" size="sm" onClick={() => openDirections(provider.lat, provider.lng)}>
                         <Navigation className="h-4 w-4 mr-1" />
                         Directions
                       </Button>
