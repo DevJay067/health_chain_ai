@@ -8,7 +8,8 @@ import FirstAid from './components/FirstAid';
 import HealthHistory from './components/HealthHistory';
 import HealthAnalytics from './components/HealthAnalytics';
 import RealTimeMonitoring from './components/RealTimeMonitoring';
-type PageType = 'home' | 'first-aid' | 'monitoring' | 'history' | 'analytics';
+import BMaxAI from './components/BMaxAI';
+type PageType = 'home' | 'first-aid' | 'monitoring' | 'history' | 'analytics' | 'bmax';
 
 function App() {
   const [scrollY, setScrollY] = useState(0);
