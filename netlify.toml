@@ -4,7 +4,7 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://fbc534da-6cb9-4276-abe9-9c8214a38e5b.preview.emergentagent.com/api/:splat"
+  to = "https://back-to-bmax.preview.emergentagent.com/api/:splat"
   status = 200
   force = true
 
