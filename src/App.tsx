@@ -36,6 +36,8 @@ function App() {
         setCurrentPage('history');
       } else if (pathname.includes('analytics')) {
         setCurrentPage('analytics');
+      } else if (pathname.includes('bmax')) {
+        setCurrentPage('bmax');
       } else {
         setCurrentPage('home');
       }
