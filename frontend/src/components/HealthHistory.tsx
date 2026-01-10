@@ -136,8 +136,15 @@ export default function HealthHistory() {
   ];
 
   useEffect(() => {
+    // Ensure body overflow is not blocked
+    document.body.style.overflow = '';
     window.scrollTo({ top: 0, behavior: "smooth" });
     loadInitialData();
+    
+    return () => {
+      // Clean up on unmount
+      document.body.style.overflow = '';
+    };
   }, []);
 
   const loadInitialData = async () => {
