@@ -33,13 +33,13 @@ import {
   MapPin,
   Navigation,
   Phone,
-  Clock,
   Star,
   Cloud,
   Watch,
   Footprints,
   Moon,
   Flame,
+  ExternalLink,
 } from "lucide-react";
 import { useHealthData } from "@/hooks/useHealthData";
 import {
@@ -52,39 +52,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Chart } from "react-google-charts";
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Fix Leaflet default marker icon issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// Custom hospital icon
-const hospitalIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#ef4444"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>`),
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
-});
-
-const urgentCareIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#f59e0b"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>`),
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
-});
-
-const userIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#3b82f6"><circle cx="12" cy="12" r="8"/></svg>`),
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-  popupAnchor: [0, -12],
-});
 
 // Sample healthcare providers data
 const healthcareProviders = [
@@ -119,7 +86,6 @@ export default function HealthAnalytics() {
   } = useHealthData();
 
   const [chartData, setChartData] = useState<any[]>([]);
-  const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]);
   const [googleFitData, setGoogleFitData] = useState<GoogleFitData>({
     steps: 8547,
     calories: 2150,
@@ -131,20 +97,6 @@ export default function HealthAnalytics() {
     connected: true,
   });
   const [isSyncingFit, setIsSyncingFit] = useState(false);
-
-  // Get user location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
-        },
-        () => {
-          console.log("Using default location");
-        }
-      );
-    }
-  }, []);
 
   // Simulate Google Fit sync
   const syncGoogleFit = async () => {
@@ -321,6 +273,10 @@ export default function HealthAnalytics() {
 
   const openDirections = (lat: number, lng: number) => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+  };
+
+  const openGoogleMapsSearch = () => {
+    window.open('https://www.google.com/maps/search/hospitals+near+me/', '_blank');
   };
 
   return (
@@ -732,85 +688,34 @@ export default function HealthAnalytics() {
             </Card>
           </TabsContent>
 
-          {/* Healthcare Providers with Leaflet/OpenStreetMap */}
+          {/* Healthcare Providers */}
           <TabsContent value="providers" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <MapPin className="h-5 w-5 mr-2 text-red-600" />
                   Nearby Healthcare Providers
-                  <Badge className="ml-2 bg-green-100 text-green-700">OpenStreetMap</Badge>
+                  <Badge className="ml-2 bg-red-100 text-red-700">Google Maps</Badge>
                 </CardTitle>
                 <CardDescription>Find hospitals and urgent care centers near you</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-xl overflow-hidden border border-gray-200" style={{ height: '400px' }}>
-                  <MapContainer
-                    center={userLocation}
-                    zoom={12}
-                    style={{ height: '100%', width: '100%' }}
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    
-                    {/* User location marker */}
-                    <Marker position={userLocation} icon={userIcon}>
-                      <Popup>
-                        <div className="text-center">
-                          <strong>Your Location</strong>
-                        </div>
-                      </Popup>
-                    </Marker>
-                    
-                    {/* Healthcare provider markers */}
-                    {healthcareProviders.map((provider) => (
-                      <Marker
-                        key={provider.id}
-                        position={[provider.lat, provider.lng]}
-                        icon={provider.type === 'hospital' ? hospitalIcon : urgentCareIcon}
-                      >
-                        <Popup>
-                          <div className="p-1 min-w-[200px]">
-                            <h3 className="font-bold text-lg">{provider.name}</h3>
-                            <div className="flex items-center gap-1 my-1">
-                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                              <span>{provider.rating}</span>
-                            </div>
-                            <p className="text-sm text-gray-600 flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {provider.phone}
-                            </p>
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {provider.specialties.map((spec, idx) => (
-                                <span key={idx} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                                  {spec}
-                                </span>
-                              ))}
-                            </div>
-                            <Button
-                              size="sm"
-                              className="w-full mt-3"
-                              onClick={() => openDirections(provider.lat, provider.lng)}
-                            >
-                              <Navigation className="h-4 w-4 mr-1" />
-                              Get Directions
-                            </Button>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    ))}
-                  </MapContainer>
+                {/* Google Maps Button */}
+                <div className="mb-6">
+                  <Button onClick={openGoogleMapsSearch} className="w-full bg-blue-600 hover:bg-blue-700">
+                    <MapPin className="h-5 w-5 mr-2" />
+                    Open Google Maps to Find Hospitals Near You
+                    <ExternalLink className="h-4 w-4 ml-2" />
+                  </Button>
                 </div>
 
                 {/* Provider List */}
-                <div className="mt-6 space-y-4">
-                  <h3 className="font-semibold text-lg">Healthcare Providers</h3>
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">Top Healthcare Providers</h3>
                   {healthcareProviders.map((provider) => (
                     <div
                       key={provider.id}
-                      className="flex items-center justify-between p-4 border rounded-xl hover:bg-gray-50 cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-4 border rounded-xl hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex items-center gap-4">
                         <div className={`p-3 rounded-xl ${provider.type === 'hospital' ? 'bg-red-100' : 'bg-yellow-100'}`}>
@@ -824,12 +729,24 @@ export default function HealthAnalytics() {
                             <span>•</span>
                             <span>{provider.type === 'hospital' ? 'Hospital' : 'Urgent Care'}</span>
                           </div>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {provider.specialties.slice(0, 2).map((spec, idx) => (
+                              <span key={idx} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                                {spec}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => openDirections(provider.lat, provider.lng)}>
-                        <Navigation className="h-4 w-4 mr-1" />
-                        Directions
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => window.open(`tel:${provider.phone}`)}>
+                          <Phone className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" onClick={() => openDirections(provider.lat, provider.lng)}>
+                          <Navigation className="h-4 w-4 mr-1" />
+                          Directions
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
