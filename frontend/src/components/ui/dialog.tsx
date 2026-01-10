@@ -3,18 +3,18 @@ import { cn } from "@/lib/utils"
 
 const Dialog = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & { open?: boolean; onOpenChange?: (open: boolean) => void }>(
   ({ className, open, onOpenChange, children, ...props }, ref) => {
-    if (!open) return null
-    
     React.useEffect(() => {
       if (open) {
         document.body.style.overflow = 'hidden'
       } else {
-        document.body.style.overflow = 'unset'
+        document.body.style.overflow = ''
       }
       return () => {
-        document.body.style.overflow = 'unset'
+        document.body.style.overflow = ''
       }
     }, [open])
+    
+    if (!open) return null
     
     return (
       <div 
