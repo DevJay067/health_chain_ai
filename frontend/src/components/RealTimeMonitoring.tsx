@@ -26,13 +26,11 @@ import {
   Clock,
   Smartphone,
   Watch,
-  Brain,
   Bluetooth,
   BarChart3,
   Navigation,
   MapPin,
   Phone,
-  Star,
   Cloud,
   Database,
   RefreshCw,
@@ -42,6 +40,7 @@ import {
   Shield,
   Footprints,
   Flame,
+  ExternalLink,
 } from "lucide-react";
 import BluetoothHealthMonitor from "@/components/BluetoothHealthMonitor";
 import {
@@ -54,39 +53,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Chart } from "react-google-charts";
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Fix Leaflet default marker icon issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// Custom emergency hospital icon
-const emergencyIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#ef4444"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>`),
-  iconSize: [36, 36],
-  iconAnchor: [18, 36],
-  popupAnchor: [0, -36],
-});
-
-const userIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#3b82f6"><circle cx="12" cy="12" r="8"/></svg>`),
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-  popupAnchor: [0, -12],
-});
 
 // Emergency hospitals data
 const emergencyHospitals = [
-  { id: 1, name: "Mount Sinai Emergency", lat: 40.7900, lng: -73.9526, type: "emergency", rating: 4.5, phone: "(212) 241-6500", waitTime: "15 min", distance: "2.3 mi" },
-  { id: 2, name: "NYU Langone ER", lat: 40.7421, lng: -73.9739, type: "emergency", rating: 4.7, phone: "(212) 263-7300", waitTime: "25 min", distance: "1.8 mi" },
-  { id: 3, name: "NewYork-Presbyterian ER", lat: 40.7644, lng: -73.9537, type: "emergency", rating: 4.6, phone: "(212) 746-5454", waitTime: "20 min", distance: "3.1 mi" },
-  { id: 4, name: "Bellevue Hospital ER", lat: 40.7390, lng: -73.9750, type: "emergency", rating: 4.3, phone: "(212) 562-4141", waitTime: "35 min", distance: "1.5 mi" },
+  { id: 1, name: "Mount Sinai Emergency", lat: 40.7900, lng: -73.9526, rating: 4.5, phone: "(212) 241-6500", waitTime: "15 min", distance: "2.3 mi" },
+  { id: 2, name: "NYU Langone ER", lat: 40.7421, lng: -73.9739, rating: 4.7, phone: "(212) 263-7300", waitTime: "25 min", distance: "1.8 mi" },
+  { id: 3, name: "NewYork-Presbyterian ER", lat: 40.7644, lng: -73.9537, rating: 4.6, phone: "(212) 746-5454", waitTime: "20 min", distance: "3.1 mi" },
+  { id: 4, name: "Bellevue Hospital ER", lat: 40.7390, lng: -73.9750, rating: 4.3, phone: "(212) 562-4141", waitTime: "35 min", distance: "1.5 mi" },
 ];
 
 interface VitalSigns {
@@ -139,7 +112,6 @@ export default function RealTimeMonitoring() {
   const [vitalsHistory, setVitalsHistory] = useState<any[]>([]);
   const [showBluetoothDialog, setShowBluetoothDialog] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]);
   const [cloudIoTStatus, setCloudIoTStatus] = useState<'connected' | 'syncing' | 'disconnected'>('connected');
   
   // Google Fit realtime state
@@ -225,20 +197,6 @@ export default function RealTimeMonitoring() {
       source: "Google Cloud",
     },
   ]);
-
-  // Get user location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
-        },
-        () => {
-          console.log("Using default location");
-        }
-      );
-    }
-  }, []);
 
   // Simulate real-time data updates (Firebase-style)
   useEffect(() => {
@@ -379,6 +337,10 @@ export default function RealTimeMonitoring() {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
   };
 
+  const openGoogleMapsEmergency = () => {
+    window.open('https://www.google.com/maps/search/emergency+room+near+me/', '_blank');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-50 page-transition">
       <header className="border-b border-border/40 glass backdrop-blur-xl sticky top-0 z-50">
@@ -430,8 +392,8 @@ export default function RealTimeMonitoring() {
         {/* Google Cloud & Firebase Status Bar */}
         <Card className="mb-6 border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-6 flex-wrap">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-blue-500 text-white">
                     <Cloud className="h-5 w-5" />
@@ -823,78 +785,29 @@ export default function RealTimeMonitoring() {
             </div>
           </TabsContent>
 
-          {/* Emergency Tab with Leaflet/OpenStreetMap */}
+          {/* Emergency Tab */}
           <TabsContent value="emergency" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <MapPin className="h-5 w-5 mr-2 text-red-600" />
                   Emergency Rooms Near You
-                  <Badge className="ml-2 bg-green-100 text-green-700">OpenStreetMap</Badge>
+                  <Badge className="ml-2 bg-red-100 text-red-700">Google Maps</Badge>
                 </CardTitle>
                 <CardDescription>Find the nearest emergency care with real-time wait times</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-xl overflow-hidden border border-gray-200" style={{ height: '400px' }}>
-                  <MapContainer
-                    center={userLocation}
-                    zoom={13}
-                    style={{ height: '100%', width: '100%' }}
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    
-                    {/* User location marker */}
-                    <Marker position={userLocation} icon={userIcon}>
-                      <Popup>
-                        <div className="text-center">
-                          <strong>Your Location</strong>
-                        </div>
-                      </Popup>
-                    </Marker>
-                    
-                    {/* Emergency hospital markers */}
-                    {emergencyHospitals.map((hospital) => (
-                      <Marker
-                        key={hospital.id}
-                        position={[hospital.lat, hospital.lng]}
-                        icon={emergencyIcon}
-                      >
-                        <Popup>
-                          <div className="p-1 min-w-[220px]">
-                            <h3 className="font-bold text-lg text-red-600">{hospital.name}</h3>
-                            <div className="flex items-center gap-2 my-2">
-                              <Badge className="bg-yellow-100 text-yellow-700">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Wait: {hospital.waitTime}
-                              </Badge>
-                              <Badge variant="outline">{hospital.distance}</Badge>
-                            </div>
-                            <p className="text-sm text-gray-600 flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {hospital.phone}
-                            </p>
-                            <div className="flex gap-2 mt-3">
-                              <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => window.open(`tel:${hospital.phone}`)}>
-                                <Phone className="h-4 w-4 mr-1" />
-                                Call
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => openDirections(hospital.lat, hospital.lng)}>
-                                <Navigation className="h-4 w-4 mr-1" />
-                                Directions
-                              </Button>
-                            </div>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    ))}
-                  </MapContainer>
+                {/* Google Maps Button */}
+                <div className="mb-6">
+                  <Button onClick={openGoogleMapsEmergency} className="w-full bg-red-600 hover:bg-red-700">
+                    <MapPin className="h-5 w-5 mr-2" />
+                    Find Emergency Rooms on Google Maps
+                    <ExternalLink className="h-4 w-4 ml-2" />
+                  </Button>
                 </div>
 
                 {/* Emergency List */}
-                <div className="mt-6 space-y-4">
+                <div className="space-y-4">
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-red-600" />
                     Emergency Rooms
@@ -902,7 +815,7 @@ export default function RealTimeMonitoring() {
                   {emergencyHospitals.map((hospital) => (
                     <div
                       key={hospital.id}
-                      className="flex items-center justify-between p-4 border-2 border-red-100 rounded-xl hover:bg-red-50 cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-4 border-2 border-red-100 rounded-xl hover:bg-red-50 transition-colors"
                     >
                       <div className="flex items-center gap-4">
                         <div className="p-3 rounded-xl bg-red-100">
