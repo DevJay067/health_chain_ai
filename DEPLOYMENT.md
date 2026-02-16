@@ -30,7 +30,7 @@ VITE_API_URL=
 
 ### Option 1: Deploy to Emergent Platform (Recommended)
 The backend is already configured to run on Emergent's platform at:
-`https://back-to-bmax.preview.emergentagent.com`
+`https://agent-link-replace.preview.emergentagent.com`
 
 ### Option 2: Deploy to Other Platforms
 
