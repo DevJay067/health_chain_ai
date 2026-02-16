@@ -32,7 +32,7 @@ export default function BMaxAI() {
             </div>
 
             <a
-              href="https://www.jotform.com/app/253583637449470"
+              href="https://www.jotform.com/agent/0198328d092a7ce998d0bac908260635265d"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-full transition-all duration-300 font-medium text-sm"
@@ -65,7 +65,7 @@ export default function BMaxAI() {
         {/* JotForm Iframe Container */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-violet-100">
           <iframe
-            src="https://www.jotform.com/app/253583637449470"
+            src="https://www.jotform.com/agent/0198328d092a7ce998d0bac908260635265d"
             title="B-Max AI Health Form"
             className="w-full border-0"
             style={{ minHeight: '800px', height: 'calc(100vh - 280px)' }}
