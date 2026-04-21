@@ -1,183 +1,156 @@
-# HealthChain - Healthcare Management Platform
+<div align="center">
 
-A modern, responsive healthcare management platform built with React, TypeScript, Vite, and Supabase.
+  <h1>🏥 HealthChain</h1>
 
-## 🚀 Features
+  <p>
+    <strong>A Next-Gen Healthcare Management Platform</strong>
+  </p>
+  
+  <p>
+    <a href="#-features">Features</a> •
+    <a href="#-getting-started">Getting Started</a> •
+    <a href="#-tech-stack">Tech Stack</a> •
+    <a href="#-contributing">Contributing</a>
+  </p>
 
-- **First Aid Guide**: Quick access to emergency medical information
-- **Health History**: Track and manage personal health records
-- **Health Analytics**: Visualize health data with interactive charts
-- **Real-time Monitoring**: Connect health devices via Bluetooth for live monitoring
-- **Risk Prediction**: AI-powered health risk assessment and predictions
+  <p>
+    <img src="https://img.shields.io/badge/React-18-blue?logo=react" alt="React" />
+    <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/Vite-5-purple?logo=vite" alt="Vite" />
+    <img src="https://img.shields.io/badge/Supabase-Backend-green?logo=supabase" alt="Supabase" />
+    <img src="https://img.shields.io/badge/Tailwind-CSS-38B2AC?logo=tailwindcss" alt="Tailwind" />
+    <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License" />
+  </p>
+
+</div>
+
+---
+
+## 📖 About The Project
+
+**HealthChain** is a modern, responsive healthcare management platform designed to bridge the gap between patients and medical data. Built for speed and scalability, it leverages the power of React and Supabase to provide real-time health insights.
+
+### ✨ Key Features
+
+| Feature | Description |
+| :--- | :--- |
+| 🚑 **First Aid Guide** | Instant access to emergency medical protocols and guides. |
+| 📂 **Health History** | Securely track and manage personal medical records. |
+| 📊 **Analytics** | Visualize vitals with interactive Recharts data visualization. |
+| ⌚ **Real-time Monitoring** | Bluetooth integration for live device monitoring. |
+| 🤖 **AI Risk Prediction** | Smart algorithms to assess and predict potential health risks. |
+
+---
+
+## 📷 Screenshots
+
+<div align="center"> 
+  <img src="https://image2url.com/r2/bucket2/images/1768018618194-358e472e-25e1-4a8c-839b-388ae9fd4e71.png"  alt="HealthChain Landing Page Screenshot" />
+</div>
+
+---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 18 + TypeScript
-- **Build Tool**: Vite 5
-- **Styling**: Tailwind CSS
-- **UI Components**: Custom component library (shadcn/ui inspired)
-- **Charts**: Recharts
-- **Backend**: Supabase (BaaS)
-- **Icons**: Lucide React
+This project uses a modern, high-performance stack:
 
-## 📋 Prerequisites
+* **Frontend:** [React 18](https://reactjs.org/)
+* **Language:** [TypeScript](https://www.typescriptlang.org/)
+* **Build Tool:** [Vite](https://vitejs.dev/)
+* **Styling:** [Tailwind CSS](https://tailwindcss.com/) & [Lucide Icons](https://lucide.dev/)
+* **Components:** Custom component library (inspired by shadcn/ui)
+* **Backend:** [firebase db] (Auth & Database)
+* **Charts:** [Recharts](https://recharts.org/)
 
-- Node.js 18+ or Yarn 1.22+
-- Supabase account and project
-- Modern web browser
+---
 
-## 🔧 Installation
+## 🚀 Getting Started
 
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd healthchain
-   ```
+Follow these steps to set up the project locally.
 
-2. **Install dependencies**
-   ```bash
-   yarn install
-   ```
+### Prerequisites
 
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Edit `.env` and add your Supabase credentials:
-   ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
+* **Node.js**: v18.0.0 or higher
+* **Package Manager**: Yarn or npm
+* **Supabase**: A project created on the [Supabase Dashboard](https://supabase.com/dashboard)
 
-4. **Run the development server**
-   ```bash
-   yarn dev
-   ```
+### Installation
 
-5. **Open your browser**
-   - Navigate to `http://localhost:3000`
+1.  **Clone the repository**
+    ```bash
+    git clone [https://github.com/your-username/healthchain.git](https://github.com/your-username/healthchain.git)
+    cd healthchain
+    ```
 
-## 📦 Build for Production
+2.  **Install dependencies**
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
 
-```bash
-# Build the project
-yarn build
+3.  **Start the development server**
+    ```bash
+    npm run dev
+    ```
 
-# Preview the production build
-yarn preview
-```
+---
 
-## 🚀 Deployment
+## 📂 Project Structure
 
-This project is configured for easy deployment to Vercel. See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed instructions.
-
-### Quick Deploy to Vercel
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=<your-repo-url>)
-
-## 📁 Project Structure
-
-```
+```text
 healthchain/
 ├── src/
-│   ├── components/        # React components
-│   │   ├── ui/           # UI components (buttons, cards, etc.)
-│   │   ├── Navbar.tsx
-│   │   ├── Hero.tsx
-│   │   ├── Features.tsx
-│   │   ├── FirstAid.tsx
-│   │   ├── HealthHistory.tsx
-│   │   ├── HealthAnalytics.tsx
-│   │   ├── RealTimeMonitoring.tsx
-│   │   └── HealthRiskPrediction.tsx
-│   ├── hooks/            # Custom React hooks
-│   │   └── useHealthData.ts
-│   ├── lib/              # Utility functions
-│   │   ├── utils.ts
-│   │   └── supabase.ts
-│   ├── App.tsx           # Main application component
-│   ├── main.tsx          # Application entry point
-│   └── index.css         # Global styles
-├── public/               # Static assets
-├── vercel.json          # Vercel configuration
-├── vite.config.ts       # Vite configuration
-├── tailwind.config.js   # Tailwind CSS configuration
-└── package.json         # Dependencies and scripts
-
-## 🔐 Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `VITE_SUPABASE_URL` | Your Supabase project URL | Yes |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anonymous key | Yes |
-
-## 🧪 Available Scripts
-
-```bash
-# Start development server
-yarn dev
-
-# Build for production
-yarn build
-
-# Preview production build
-yarn preview
-
-# Run linter
-yarn lint
-
-# Type checking
-yarn typecheck
+│   ├── components/      # UI components (Buttons, Cards, etc.)
+│   ├── hooks/           # Custom React hooks
+│   ├── lib/             # Supabase client & utilities
+│   ├── pages/           # Route pages (Dashboard, Login, etc.)
+│   └── types/           # TypeScript interfaces
+├── public/              # Static assets
+└── ...
 ```
 
-## 🗄️ Database Setup
-
-This app requires the following Supabase tables:
-
-1. **health_records** - Store patient health records
-2. **vital_signs** - Store vital sign measurements
-3. **health_insights** - Store AI-generated health insights
-4. **connected_devices** - Track connected health devices
-5. **risk_assessments** - Store health risk predictions
-
-Refer to the Supabase dashboard to create these tables with appropriate schemas.
-
 ## 🎨 UI Components
+The project includes a custom UI component library containing:
 
-The project includes a custom UI component library with:
-- Buttons
-- Cards
-- Badges
-- Inputs
-- Progress bars
-- Tabs
-- Dialogs
-- Alerts
-- Selects
-- And more...
+Buttons, Cards, Badges
+
+Inputs, Selects, Forms
+
+Progress bars, Tabs
+
+Dialogs, Alerts, Toasts
 
 All components are fully typed with TypeScript and styled with Tailwind CSS.
 
 ## 🌐 Browser Support
+Chrome (latest)
 
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+Firefox (latest)
+
+Safari (latest)
+
+Edge (latest)
 
 ## 📝 License
-
 This project is licensed under the MIT License.
 
 ## 🤝 Contributing
-
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 📧 Support
+Fork the project
 
+Create your Feature Branch (git checkout -b feature/AmazingFeature)
+
+Commit your Changes (git commit -m 'Add some AmazingFeature')
+
+Push to the Branch (git push origin feature/AmazingFeature)
+
+Open a Pull Request
+
+## 📧 Support
 For support, please open an issue in the GitHub repository.
 
----
+Built with ❤️ using React, TypeScript, and Vite
 
-**Built with ❤️ using React, TypeScript, and Vite**
+
