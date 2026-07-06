@@ -1,92 +1,60 @@
-import { useEffect, useState } from 'react';
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Features from './components/Features';
-import Footer from './components/Footer';
-import BackButton from './components/BackButton';
-import FirstAid from './components/FirstAid';
-import HealthHistory from './components/HealthHistory';
-import HealthAnalytics from './components/HealthAnalytics';
-import RealTimeMonitoring from './components/RealTimeMonitoring';
-import BMaxAI from './components/BMaxAI';
-type PageType = 'home' | 'first-aid' | 'monitoring' | 'history' | 'analytics' | 'bmax';
+import { useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import Preloader from './components/Preloader';
+import LandingPage from './components/LandingPage';
+import Dashboard from './components/Dashboard';
+import { Smartphone } from 'lucide-react';
+
+type AppState = 'loading' | 'landing' | 'dashboard';
 
 function App() {
-  const [scrollY, setScrollY] = useState(0);
-  const [currentPage, setCurrentPage] = useState<PageType>('home');
+  const [appState, setAppState] = useState<AppState>('loading');
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
+    // Simulate asset loading for the pre-loader
+    const timer = setTimeout(() => {
+      setAppState('landing');
+    }, 2500); // Wait 2.5 seconds before transitioning
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => clearTimeout(timer);
   }, []);
 
-  // Handle navigation based on current pathname
-  useEffect(() => {
-    const updatePage = () => {
-      const pathname = window.location.pathname;
-      if (pathname.includes('first-aid')) {
-        setCurrentPage('first-aid');
-      } else if (pathname.includes('monitoring')) {
-        setCurrentPage('monitoring');
-      } else if (pathname.includes('history')) {
-        setCurrentPage('history');
-      } else if (pathname.includes('analytics')) {
-        setCurrentPage('analytics');
-      } else if (pathname.includes('bmax')) {
-        setCurrentPage('bmax');
-      } else {
-        setCurrentPage('home');
-      }
-      // Ensure navigation always starts at the top of the page
-      try {
-        window.scrollTo(0, 0);
-      } catch (e) {
-        /* ignore */
-      }
-    };
+  const handleStartJourney = () => {
+    // Scroll to top immediately to ensure smooth transition
+    window.scrollTo(0, 0);
+    setAppState('dashboard');
+  };
 
-    // Check on mount
-    updatePage();
+  return (
+    <div className="min-h-screen bg-white">
+      <AnimatePresence mode="wait">
+        {appState === 'loading' && (
+          <Preloader key="preloader" />
+        )}
+      </AnimatePresence>
 
-    // Listen for browser back/forward
-    window.addEventListener('popstate', updatePage);
-    
-    // Listen for custom navigation events
-    window.addEventListener('navigate', updatePage);
+      {/* Render Landing Page only if we're in landing state */}
+      {appState === 'landing' && (
+        <LandingPage onStartJourney={handleStartJourney} />
+      )}
 
-    return () => {
-      window.removeEventListener('popstate', updatePage);
-      window.removeEventListener('navigate', updatePage);
-    };
-  }, []);
+      {/* Render Dashboard only if we're in dashboard state */}
+      {appState === 'dashboard' && (
+        <Dashboard onBackToHome={() => setAppState('landing')} />
+      )}
 
-  // Render appropriate page based on currentPage
-  switch (currentPage) {
-    case 'first-aid':
-      return <FirstAid />;
-    case 'history':
-      return <HealthHistory />;
-    case 'analytics':
-      return <HealthAnalytics />;
-    case 'monitoring':
-      return <RealTimeMonitoring />;
-    case 'bmax':
-      return <BMaxAI />;
-    default:
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-          <Navbar scrollY={scrollY} />
-          <Hero scrollY={scrollY} />
-          <Features scrollY={scrollY} />
-          <Footer />
-          <BackButton />
-        </div>
-      );
-  }
+      {/* Mobile Preview Button */}
+      <button 
+        onClick={() => window.open(window.location.href, 'MobilePreview', 'width=390,height=844,resizable=no')}
+        className="fixed bottom-6 left-6 z-[9999] bg-slate-900 text-white p-4 rounded-full shadow-2xl hover:bg-slate-800 transition-all flex items-center space-x-2 group border border-slate-700/50 hover:scale-105"
+      >
+        <Smartphone className="w-5 h-5" />
+        <span className="hidden group-hover:inline font-bold text-sm whitespace-nowrap">
+          Mobile Preview
+        </span>
+      </button>
+    </div>
+  );
 }
 
 export default App;

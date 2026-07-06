@@ -1,4 +1,5 @@
 import { AlertCircle, BarChart3, FileText, Activity, ArrowRight, Brain } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface FeaturesProps {
   scrollY: number;
@@ -74,53 +75,58 @@ export default function Features({ scrollY }: FeaturesProps) {
   return (
     <section id="features" className="relative py-20 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
+        >
           <h2 className="text-4xl md:text-5xl font-bold text-slate-800 mb-4">
             Comprehensive Health Solutions
           </h2>
           <p className="text-xl text-slate-600 max-w-3xl mx-auto font-light">
             Five powerful tools to transform your healthcare experience and keep you in control
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
           {features.map((feature, index) => {
             const Icon = feature.icon;
-            const scrollOffset = 600 + index * 100;
-            const cardOpacity = Math.min(Math.max((scrollY - scrollOffset) / 200 + 1, 0), 1);
-            const cardTranslateY = Math.max(50 - (scrollY - scrollOffset) / 5, 0);
-
-            const isSpecialCard = feature.isSpecial;
             const isEmergencyCard = feature.title === 'Health Emergency';
             const isBmaxCard = feature.title === 'B-Max AI';
 
             return (
-              <div
+              <motion.div
                 key={feature.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -10, scale: 1.02 }}
                 onClick={() => handleNavigation(feature.href)}
-                className={`group backdrop-blur-xl rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 cursor-pointer ${
+                className={`group backdrop-blur-xl rounded-3xl p-8 shadow-xl cursor-pointer transition-all duration-300 ${
                   isEmergencyCard
-                    ? 'bg-gradient-to-br from-red-400/25 via-red-300/20 to-rose-300/20 border border-red-200/50 shadow-2xl shadow-red-400/30'
+                    ? 'bg-gradient-to-br from-red-400/25 via-red-300/20 to-rose-300/20 border border-red-200/50'
                     : isBmaxCard
-                    ? 'bg-gradient-to-br from-violet-300/25 via-blue-300/20 to-purple-300/20 border border-violet-200/40 shadow-2xl shadow-blue-200/30'
+                    ? 'bg-gradient-to-br from-violet-300/25 via-blue-300/20 to-purple-300/20 border border-violet-200/40'
                     : 'bg-white/50 border border-white/60'
                 }`}
                 style={{
-                  opacity: cardOpacity,
-                  transform: `translateY(${cardTranslateY}px)`,
                   boxShadow: isEmergencyCard
-                    ? '0 8px 32px 0 rgba(239, 68, 68, 0.2), inset 0 1px 2px 0 rgba(255, 150, 150, 0.4), inset 0 -1px 2px 0 rgba(255, 200, 200, 0.3)'
+                    ? '0 8px 32px 0 rgba(239, 68, 68, 0.2), inset 0 1px 2px 0 rgba(255, 150, 150, 0.4)'
                     : isBmaxCard
-                    ? '0 8px 32px 0 rgba(148, 113, 255, 0.15), inset 0 1px 2px 0 rgba(255, 200, 200, 0.2), inset 0 -1px 2px 0 rgba(100, 200, 255, 0.3)'
+                    ? '0 8px 32px 0 rgba(148, 113, 255, 0.15), inset 0 1px 2px 0 rgba(255, 200, 200, 0.2)'
                     : '0 8px 32px 0 rgba(31, 38, 135, 0.15), inset 0 1px 2px 0 rgba(255, 255, 255, 0.8)',
                 }}
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div
-                    className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center shadow-lg ${feature.shadowColor} group-hover:scale-110 transition-transform duration-300`}
+                  <motion.div
+                    whileHover={{ rotate: 15, scale: 1.1 }}
+                    className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center shadow-lg ${feature.shadowColor}`}
                   >
                     <Icon className="w-7 h-7 text-white" />
-                  </div>
+                  </motion.div>
                   <span
                     className={`text-xs font-semibold px-3 py-1.5 rounded-full ${feature.badgeColor}`}
                   >
@@ -137,24 +143,32 @@ export default function Features({ scrollY }: FeaturesProps) {
                   <span>Learn more</span>
                   <ArrowRight className="w-5 h-5" />
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
 
-        <div className="mt-16 backdrop-blur-xl bg-gradient-to-r from-blue-500/10 to-cyan-400/10 border border-white/60 rounded-3xl p-8 md:p-12 shadow-xl text-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="mt-16 backdrop-blur-xl bg-gradient-to-r from-blue-500/10 to-cyan-400/10 border border-white/60 rounded-3xl p-8 md:p-12 shadow-xl text-center"
+        >
           <h3 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
             Ready to Transform Your Healthcare?
           </h3>
           <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto font-light">
             Join thousands of users who trust HealthChain for secure, AI-powered health management
           </p>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => handleNavigation('/bmax')}
-            className="px-10 py-4 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-full font-semibold shadow-2xl shadow-blue-300/50 hover:shadow-blue-400/60 transition-all duration-300 hover:scale-105">
+            className="px-10 py-4 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-full font-semibold shadow-2xl shadow-blue-300/50 hover:shadow-blue-400/60 transition-all duration-300">
             Get Started Today
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       </div>
     </section>
   );
