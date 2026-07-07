@@ -63,7 +63,7 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
 
   useEffect(() => {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
+      const watchId = navigator.geolocation.watchPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
           setUserLocation({ lat: latitude, lng: longitude });
@@ -73,6 +73,7 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
+      return () => navigator.geolocation.clearWatch(watchId);
     }
   }, []);
 

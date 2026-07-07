@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { motion, useSpring, useMotionValue, useTransform } from 'framer-motion';
+import { motion, useSpring, useMotionValue, useTransform, useTime } from 'framer-motion';
 
 export default function InteractiveBackground() {
   const mouseX = useMotionValue(-1000);
@@ -14,6 +14,13 @@ export default function InteractiveBackground() {
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
     };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        mouseX.set(e.touches[0].clientX);
+        mouseY.set(e.touches[0].clientY);
+      }
+    };
     
     const handleMouseLeave = () => {
       // Return to a neutral position off-screen
@@ -23,10 +30,16 @@ export default function InteractiveBackground() {
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseleave", handleMouseLeave);
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchstart", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleMouseLeave);
     
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchstart", handleTouchMove);
+      window.removeEventListener("touchend", handleMouseLeave);
     };
   }, [mouseX, mouseY]);
 
@@ -56,9 +69,11 @@ export default function InteractiveBackground() {
 }
 
 function WaveLine({ t, smoothMouseX, smoothMouseY, opacity, strokeWidth }: any) {
+  const time = useTime();
   const path = useTransform(() => {
     const mx = smoothMouseX.get();
     const my = smoothMouseY.get();
+    const current = time.get() * 0.001; // convert ms to seconds
     
     let d = "";
     
@@ -72,7 +87,8 @@ function WaveLine({ t, smoothMouseX, smoothMouseY, opacity, strokeWidth }: any) 
       // base amplitude + some spread that depends on t
       // t * 0.5 creates a phase shift to make them twist like a 3D ribbon
       // t * 30 adds a slight vertical spread
-      const baseWave = (150 + t * 100) * Math.sin(x * freq + t * 0.5) + t * 30;
+      // Add current to phase for continuous animation
+      const baseWave = (150 + t * 100) * Math.sin(x * freq + t * 0.5 + current) + t * 30;
       
       // Calculate pull towards mouse
       // We map screen mouse coordinates to viewBox coordinates roughly
