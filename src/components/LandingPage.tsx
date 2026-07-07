@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
-import { Brain, Activity, ArrowRight, Lock, Grid, Shield, Star, FileText, Layers } from 'lucide-react';
+import { Brain, Activity, ArrowRight, Lock, Grid, Shield, Star, FileText, Layers, Dribbble } from 'lucide-react';
 import InteractiveBackground from './InteractiveBackground';
 import SponsorMarquee from './SponsorMarquee';
 import AnimatedLogo from './AnimatedLogo';
@@ -46,7 +46,7 @@ export default function LandingPage({ onStartJourney }: LandingPageProps) {
   const ActiveIcon = timelineNodes[activeIndex].icon;
 
   return (
-    <div ref={containerRef} className="relative bg-[#fcfcfc] text-slate-900 font-sans selection:bg-lime-200 selection:text-slate-900">
+    <div ref={containerRef} className="relative bg-[#fcfcfc] text-slate-900 font-sans selection:bg-lime-200 selection:text-slate-900 max-w-[100vw] overflow-x-clip">
       
       {/* Background Wavy Lines */}
       <InteractiveBackground />
@@ -118,7 +118,7 @@ export default function LandingPage({ onStartJourney }: LandingPageProps) {
                       </div>
                       
                       {/* The Scrubber Tail (Dynamic Subtitle) */}
-                      <div className="absolute top-1/2 -translate-y-1/2 left-[40px] flex items-center h-full pointer-events-none w-[350px] z-10">
+                      <div className="hidden md:flex absolute top-1/2 -translate-y-1/2 left-[40px] items-center h-full pointer-events-none w-[350px] z-10">
                         <div className="h-[1px] w-full bg-gradient-to-r from-slate-300 via-slate-200/50 to-transparent relative">
                           <div className="absolute bottom-1/2 translate-y-[1px] left-4 flex items-center space-x-4 text-[9px] font-bold tracking-[0.2em] whitespace-nowrap">
                             <span className="text-slate-900">{timelineNodes[activeIndex].title.toUpperCase()}</span>
@@ -390,6 +390,13 @@ export default function LandingPage({ onStartJourney }: LandingPageProps) {
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </form>
+                
+                <div className="mt-10 pt-6 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-sm text-slate-500 font-medium">Follow our design journey</span>
+                  <a href="#" className="flex items-center justify-center w-10 h-10 rounded-full bg-pink-50 text-pink-500 hover:bg-pink-500 hover:text-white transition-colors group">
+                    <Dribbble className="w-5 h-5 group-hover:animate-spin-slow" />
+                  </a>
+                </div>
               </div>
             </div>
 

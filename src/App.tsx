@@ -26,7 +26,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white max-w-[100vw] overflow-x-clip">
       <AnimatePresence mode="wait">
         {appState === 'loading' && (
           <Preloader key="preloader" />
