@@ -3,7 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import Preloader from './components/Preloader';
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
-import { Smartphone } from 'lucide-react';
+
 
 type AppState = 'loading' | 'landing' | 'dashboard';
 
@@ -43,16 +43,7 @@ function App() {
         <Dashboard onBackToHome={() => setAppState('landing')} />
       )}
 
-      {/* Mobile Preview Button */}
-      <button 
-        onClick={() => window.open(window.location.href, 'MobilePreview', 'width=390,height=844,resizable=no')}
-        className="fixed bottom-6 left-6 z-[9999] bg-slate-900 text-white p-4 rounded-full shadow-2xl hover:bg-slate-800 transition-all flex items-center space-x-2 group border border-slate-700/50 hover:scale-105"
-      >
-        <Smartphone className="w-5 h-5" />
-        <span className="hidden group-hover:inline font-bold text-sm whitespace-nowrap">
-          Mobile Preview
-        </span>
-      </button>
+
     </div>
   );
 }
