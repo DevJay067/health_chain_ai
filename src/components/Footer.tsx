@@ -13,7 +13,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <h3 className="text-2xl font-black bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent tracking-tight">
-                    HealthChain
+                    Health Chain AI
                   </h3>
                   <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mt-0.5">Blockchain Healthcare</p>
                 </div>
@@ -73,7 +73,7 @@ export default function Footer() {
 
           <div className="border-t border-slate-200/60 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm font-medium text-slate-500">
-              © 2025 HealthChain. Developed by Jay Magar. All rights reserved.
+              © 2025 Health Chain AI. Developed by Jay Magar. All rights reserved.
             </p>
             <div className="flex items-center space-x-6">
               <a href="#" className="text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors flex items-center space-x-1.5">

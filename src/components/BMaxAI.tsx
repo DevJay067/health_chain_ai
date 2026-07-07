@@ -82,7 +82,7 @@ export default function BMaxAI() {
             data-testid="bmax-back-button-bottom"
           >
             <ArrowLeft className="w-5 h-5" />
-            Back to HealthChain Home
+            Back to Health Chain AI Home
           </button>
         </div>
       </div>

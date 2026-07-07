@@ -51,7 +51,7 @@ export default function Preloader() {
           transition={{ duration: 1 }}
           className="text-2xl font-serif tracking-[0.3em] text-slate-900 uppercase"
         >
-          HealthChain
+          Health Chain AI
         </motion.h1>
       </motion.div>
     </motion.div>

@@ -34,7 +34,7 @@ export default function Navbar({ scrollY }: NavbarProps) {
             </div>
             <div>
               <h1 className="text-2xl font-black bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent tracking-tight">
-                HealthChain
+                Health Chain AI
               </h1>
               <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mt-0.5">Blockchain Security</p>
             </div>

@@ -178,7 +178,7 @@ export default function Features({ scrollY }: FeaturesProps) {
               Ready to Transform Your <span className="text-gradient">Healthcare?</span>
             </h3>
             <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto font-medium">
-              Join thousands of users who trust HealthChain for secure, AI-powered health management.
+              Join thousands of users who trust Health Chain AI for secure, AI-powered health management.
             </p>
             <button
               onClick={() => handleNavigation('/bmax')}
