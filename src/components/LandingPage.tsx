@@ -164,7 +164,7 @@ export default function LandingPage({ onStartJourney }: LandingPageProps) {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="text-5xl md:text-7xl lg:text-8xl font-serif tracking-tight text-slate-900 leading-[1.1] mb-8"
+              className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-serif tracking-tight text-slate-900 leading-[1.1] mb-8"
             >
               Intelligent health <br />
               <span className="italic">deserves</span> a secure chain.
@@ -204,18 +204,18 @@ export default function LandingPage({ onStartJourney }: LandingPageProps) {
         <SponsorMarquee />
 
         {/* SECTION 2: Diagnostics */}
-        <section className="px-6 md:px-12 py-32 border-b border-slate-200/50">
+        <section className="px-6 md:px-12 py-16 md:py-32 border-b border-slate-200/50">
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-16 lg:gap-24">
             
             {/* Sticky Left Column */}
             <div className="lg:w-1/3">
               <div className="sticky top-40">
-                <h2 className="text-[8rem] font-serif leading-none font-light text-slate-900 mb-6 tracking-tighter">02</h2>
+                <h2 className="text-[5rem] md:text-[8rem] font-serif leading-none font-light text-slate-900 mb-6 tracking-tighter">02</h2>
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="w-12 h-[1px] bg-slate-900"></div>
                   <span className="text-xs font-bold tracking-widest uppercase text-slate-900">Services</span>
                 </div>
-                <h3 className="text-4xl font-serif text-slate-900 leading-tight">
+                <h3 className="text-3xl md:text-4xl font-serif text-slate-900 leading-tight">
                   An intelligent body <br/><span className="italic text-slate-600">of clinical insights.</span>
                 </h3>
                 <p className="mt-6 text-slate-500">Upload your reports, MRIs, or blood work. Our RAG AI system analyzes it against peer-reviewed sources.</p>
@@ -247,18 +247,18 @@ export default function LandingPage({ onStartJourney }: LandingPageProps) {
         </section>
 
         {/* SECTION 3: Blockchain */}
-        <section className="px-6 md:px-12 py-32 border-b border-slate-200/50">
+        <section className="px-6 md:px-12 py-16 md:py-32 border-b border-slate-200/50">
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-16 lg:gap-24">
             
             {/* Sticky Left Column */}
             <div className="lg:w-1/3">
               <div className="sticky top-40">
-                <h2 className="text-[8rem] font-serif leading-none font-light text-slate-900 mb-6 tracking-tighter">03</h2>
+                <h2 className="text-[5rem] md:text-[8rem] font-serif leading-none font-light text-slate-900 mb-6 tracking-tighter">03</h2>
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="w-12 h-[1px] bg-slate-900"></div>
                   <span className="text-xs font-bold tracking-widest uppercase text-slate-900">Process</span>
                 </div>
-                <h3 className="text-4xl font-serif text-slate-900 leading-tight">
+                <h3 className="text-3xl md:text-4xl font-serif text-slate-900 leading-tight">
                   Decentralized Vault. <br/><span className="italic text-slate-600">No compromises.</span>
                 </h3>
                 <p className="mt-6 text-slate-500">Your data is secured in a decentralized, HIPAA-compliant vault. You control access, not corporations.</p>
@@ -304,18 +304,18 @@ export default function LandingPage({ onStartJourney }: LandingPageProps) {
         </section>
 
         {/* SECTION 4: Monitoring */}
-        <section className="px-6 md:px-12 py-32 border-b border-slate-200/50">
+        <section className="px-6 md:px-12 py-16 md:py-32 border-b border-slate-200/50">
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-16 lg:gap-24">
             
             {/* Sticky Left Column */}
             <div className="lg:w-1/3">
               <div className="sticky top-40">
-                <h2 className="text-[8rem] font-serif leading-none font-light text-slate-900 mb-6 tracking-tighter">04</h2>
+                <h2 className="text-[5rem] md:text-[8rem] font-serif leading-none font-light text-slate-900 mb-6 tracking-tighter">04</h2>
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="w-12 h-[1px] bg-slate-900"></div>
                   <span className="text-xs font-bold tracking-widest uppercase text-slate-900">Six Reasons</span>
                 </div>
-                <h3 className="text-4xl font-serif text-slate-900 leading-tight mb-6">
+                <h3 className="text-3xl md:text-4xl font-serif text-slate-900 leading-tight mb-6">
                   Decentralized, intelligent, <br/>
                   <span className="italic text-slate-600">secure records, and AI-assisted diagnostics.</span>
                 </h3>
@@ -348,18 +348,18 @@ export default function LandingPage({ onStartJourney }: LandingPageProps) {
         </section>
 
         {/* SECTION 5: Contact */}
-        <section className="px-6 md:px-12 py-32">
+        <section className="px-6 md:px-12 py-16 md:py-32">
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-16 lg:gap-24">
             
             {/* Sticky Left Column */}
             <div className="lg:w-1/3">
               <div className="sticky top-40">
-                <h2 className="text-[8rem] font-serif leading-none font-light text-slate-900 mb-6 tracking-tighter">05</h2>
+                <h2 className="text-[5rem] md:text-[8rem] font-serif leading-none font-light text-slate-900 mb-6 tracking-tighter">05</h2>
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="w-12 h-[1px] bg-slate-900"></div>
                   <span className="text-xs font-bold tracking-widest uppercase text-slate-900">Contact</span>
                 </div>
-                <h3 className="text-4xl font-serif text-slate-900 leading-tight mb-6">
+                <h3 className="text-3xl md:text-4xl font-serif text-slate-900 leading-tight mb-6">
                   Join the <span className="italic text-slate-600">Beta.</span>
                 </h3>
                 <p className="text-slate-500">Whether you are managing chronic conditions or just want a secure health vault, request access today.</p>
@@ -368,7 +368,7 @@ export default function LandingPage({ onStartJourney }: LandingPageProps) {
 
             {/* Scrolling Right Column (Form) */}
             <div className="lg:w-2/3">
-              <h2 className="text-6xl md:text-[6rem] lg:text-[7rem] font-serif text-slate-900 leading-[0.9] mb-16 tracking-tighter">
+              <h2 className="text-4xl sm:text-6xl md:text-[6rem] lg:text-[7rem] font-serif text-slate-900 leading-[0.9] mb-16 tracking-tighter">
                 Let's <br />
                 build a <span className="bg-lime-400 px-2 italic">secure</span> <br />
                 future, <br />

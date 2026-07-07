@@ -229,7 +229,7 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
       
       <div className="relative z-10 flex flex-col h-full">
       {/* Dashboard Top Nav */}
-      <nav className="bg-white/30 backdrop-blur-md border-b border-white/20 px-6 sm:px-12 py-4 flex items-center justify-between sticky top-0 z-40">
+      <nav className="bg-white/30 backdrop-blur-md border-b border-white/20 px-3 sm:px-12 py-3 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center space-x-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={onBackToHome}>
           <AnimatedLogo />
           <div className="hidden sm:block h-6 w-[1px] bg-slate-200"></div>
@@ -264,24 +264,24 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
             <div className="w-2 h-2 rounded-full bg-lime-500 animate-pulse"></div>
             <span>System Active</span>
           </div>
-          <a href={`tel:${emergencyNumber}`} className="flex items-center space-x-2 bg-red-600 text-white px-5 py-2.5 rounded-full font-bold shadow-md hover:bg-red-700 transition-colors cursor-pointer group">
+          <a href={`tel:${emergencyNumber}`} className="flex items-center space-x-2 bg-red-600 text-white px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-full font-bold text-sm sm:text-base shadow-md hover:bg-red-700 transition-colors cursor-pointer group">
             <AlertCircle className="w-5 h-5 group-hover:animate-ping" />
             <span className="hidden sm:inline">EMERGENCY ({emergencyNumber})</span>
             <span className="sm:hidden">SOS</span>
           </a>
-          <div className="w-10 h-10 ml-2 rounded-full bg-slate-200 border border-slate-300 shadow-sm overflow-hidden cursor-pointer hover:border-lime-500 transition-colors">
+          <div className="w-10 h-10 ml-2 shrink-0 rounded-full bg-slate-200 border border-slate-300 shadow-sm overflow-hidden cursor-pointer hover:border-lime-500 transition-colors">
             <img src="https://ui-avatars.com/api/?name=User&background=0f172a&color=fff" alt="User" />
           </div>
         </div>
       </nav>
 
       {/* Main Content Area */}
-      <div className={`flex-1 flex justify-center transition-all duration-700 ease-in-out ${isScrolled ? 'p-0 pb-0' : 'p-4 pb-28 pt-8'}`}>
+      <div className={`flex-1 flex justify-center transition-all duration-700 ease-in-out ${isScrolled ? 'p-0 pb-0' : 'p-2 sm:p-4 pb-28 pt-4 sm:pt-8'}`}>
         <main 
           className={`w-full bg-white/60 backdrop-blur-3xl shadow-[0_8px_40px_rgb(0,0,0,0.06)] relative transition-all duration-700 ease-in-out origin-top ${
             isScrolled 
-              ? 'max-w-full min-h-screen rounded-none border-none px-6 md:px-12 pt-28 md:pt-32 pb-12' 
-              : 'max-w-7xl min-h-[80vh] border border-white rounded-[2.5rem] p-6 md:p-10'
+              ? 'max-w-full min-h-screen rounded-none border-none px-4 md:px-12 pt-24 md:pt-32 pb-12' 
+              : 'max-w-7xl min-h-[80vh] border border-white rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 md:p-10'
           }`}
         >
           
@@ -316,13 +316,13 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
-                <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-8 border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-between">
+                <div className="bg-white/80 backdrop-blur-xl rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-8 border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-between">
                   <div>
                     <h3 className="text-xl font-serif font-bold text-slate-900 mb-6">What to do in an emergency</h3>
                     <div className="space-y-4">
                       {firstAidList.map((tut, i) => (
-                        <div key={tut.title} onClick={() => handleVideoClick(tut.url)} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl hover:bg-slate-100 cursor-pointer transition-colors border border-slate-100 group">
-                          <div className="flex items-center space-x-4">
+                        <div key={tut.title} onClick={() => handleVideoClick(tut.url)} className="flex items-center justify-between p-4 sm:p-6 bg-slate-50 rounded-2xl hover:bg-slate-100 cursor-pointer transition-colors border border-slate-100 group">
+                          <div className="flex items-center space-x-3 sm:space-x-4">
                             <span className="text-sm font-bold text-lime-500 bg-lime-100 w-8 h-8 rounded-full flex items-center justify-center">{i+1}</span>
                             <span className="font-bold text-slate-700 text-lg">{tut.title}</span>
                           </div>
@@ -518,14 +518,14 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
             <button
               key={item.id}
               onClick={() => switchTab(item.id)}
-              className={`relative group flex flex-col items-center justify-center w-16 h-16 rounded-2xl transition-all duration-300 ${
+              className={`relative group flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl transition-all duration-300 ${
                 activeTab === item.id 
                   ? 'bg-slate-900 text-white shadow-xl scale-105' 
                   : 'text-slate-500 hover:bg-white hover:text-slate-900'
               }`}
             >
               <item.icon className="w-5 h-5 mb-1" />
-              <span className="text-[9px] font-bold">{item.label}</span>
+              <span className="text-[8px] sm:text-[9px] font-bold">{item.label}</span>
             </button>
           ))}
         </div>

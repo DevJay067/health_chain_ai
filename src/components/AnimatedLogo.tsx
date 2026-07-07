@@ -4,7 +4,7 @@ export default function AnimatedLogo() {
   return (
     <div className="flex items-center cursor-pointer group select-none">
       <motion.div 
-        className="flex items-baseline space-x-[2px] font-serif font-black text-2xl tracking-tighter text-slate-900"
+        className="flex items-baseline space-x-[2px] font-serif font-black text-xl sm:text-2xl tracking-tighter text-slate-900"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -41,6 +41,7 @@ export default function AnimatedLogo() {
         <span>a</span>
         <span>i</span>
         <span>n</span>
+        <span className="ml-1 text-lime-500">AI</span>
       </motion.div>
     </div>
   );
