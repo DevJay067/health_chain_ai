@@ -12,7 +12,7 @@ export default function DoctorDashboard({ user, onLogout }: DoctorDashboardProps
   const [activeTab, setActiveTab] = useState('patients');
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { account, connectWallet, getContract, isConnecting } = useWeb3(user.email);
+  const { account, connectWallet, getContract, isConnecting } = useWeb3();
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [patientRecords, setPatientRecords] = useState<any[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(false);

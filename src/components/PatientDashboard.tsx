@@ -18,7 +18,7 @@ interface DashboardProps {
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState('firstaid');
   const [isScrolled, setIsScrolled] = useState(false);
-  const { account, connectWallet, getContract, isConnecting } = useWeb3(user.email);
+  const { account, connectWallet, getContract, isConnecting } = useWeb3();
   const [isRegisteringDID, setIsRegisteringDID] = useState(false);
 
   const switchTab = (tabId: string) => {
@@ -115,10 +115,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     const recordsQ = query(collection(db, 'records'), where('patientEmail', '==', user.email));
     const unsubRecords = onSnapshot(recordsQ, (snapshot) => {
       const recs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setRecords(recs.length ? recs : [
-        { title: 'Blood Work Report (Demo)', date: 'Oct 12, 2025', is_secure: true },
-        { title: 'MRI Scan (Demo)', date: 'Sep 05, 2025', is_secure: true }
-      ]);
+      setRecords(recs);
     });
 
     // Realtime listener for access requests
@@ -193,7 +190,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
              'firebase-storage', // storage location
              ethers.keccak256(ethers.toUtf8Bytes("decryption_key_mock"))
           );
-          await tx.wait();
           
           // 4. Save metadata to Firestore
           const newDocRef = doc(collection(db, 'records'));
@@ -209,7 +205,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             createdAt: serverTimestamp()
           };
           
-          await setDoc(newDocRef, recordData);
+          await Promise.all([
+             tx.wait(),
+             setDoc(newDocRef, recordData)
+          ]);
           alert('Record securely added to the blockchain and Firebase!');
         } catch (err: any) {
           alert('Upload failed: ' + (err.message || err));

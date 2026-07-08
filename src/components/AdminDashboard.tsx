@@ -12,7 +12,7 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { account, connectWallet, getContract, isConnecting } = useWeb3(user.email);
+  const { account, connectWallet, getContract, isConnecting } = useWeb3();
 
   useEffect(() => {
     // Realtime listener for all doctors

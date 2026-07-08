@@ -45,14 +45,10 @@ Building a healthcare application requires a delicate balance between **speed**,
 
 ## 🔗 How the Blockchain Works in HealthChain.AI
 
-Instead of forcing users to install browser extensions like MetaMask, HealthChain.AI uses a revolutionary **"Invisible Web3"** approach.
+HealthChain.AI leverages Web3 technology natively via **MetaMask** for strict cryptographic security.
 
-### The "Burner Wallet" System
-When you log in with your email, the application uses a cryptographic hash of your email address to deterministically generate a unique, secure Ethereum private key entirely in the background. 
-1. This creates a hidden **"Burner Wallet"**.
-2. The app automatically checks your wallet's balance on the local Hardhat network.
-3. If it's empty, it automatically transfers **10 fake ETH** from a developer funding pool to your wallet.
-4. Your wallet is now secretly connected to the app, allowing you to sign blockchain transactions invisibly just by clicking normal buttons!
+### 🔐 1. Seamless Web3 MetaMask Authentication
+By linking your traditional email account with your MetaMask wallet, HealthChain.AI enables secure interactions with the blockchain. You sign transactions directly from your browser extension, ensuring that your private keys never leave your device.
 
 ### The Smart Contracts
 
@@ -60,9 +56,9 @@ When you log in with your email, the application uses a cryptographic hash of yo
 graph TD
     classDef contract fill:#1e293b,stroke:#84cc16,stroke-width:2px,color:#fff,rx:10px,ry:10px;
     
-    A[HealthChainRoles.sol<br/>(Identity & Roles)]:::contract
-    B[HealthRecord.sol<br/>(Data Verification)]:::contract
-    C[AccessRequest.sol<br/>(Consent Logic)]:::contract
+    A["HealthChainRoles.sol<br/>(Identity & Roles)"]:::contract
+    B["HealthRecord.sol<br/>(Data Verification)"]:::contract
+    C["AccessRequest.sol<br/>(Consent Logic)"]:::contract
     
     A --> |Provides Role Modifiers| B
     A --> |Validates Patient/Doctor/Admin| C
@@ -144,7 +140,7 @@ npm run dev
 
 ### 4. Test the Flow
 1. Open `http://localhost:3000`
-2. **Patient:** Sign up as a Patient. The app will invisibly generate your Ethereum wallet and fund it. Upload a file.
+2. **Patient:** Sign up as a Patient. Connect your MetaMask wallet. Upload a file.
 3. **Doctor:** Sign up as a Doctor. (You will be placed in a secure "Pending" state).
 4. **Admin:** Log out, and log in with the default admin account (`admin@healthchain.ai` / password: `admin`). Approve the Doctor.
 5. **Connect:** Log back in as the Doctor, request access to the Patient.
