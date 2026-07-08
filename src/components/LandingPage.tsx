@@ -8,9 +8,10 @@ import NavTimelineString from './NavTimelineString';
 
 interface LandingPageProps {
   onStartJourney: () => void;
+  onGuestEnter: () => void;
 }
 
-export default function LandingPage({ onStartJourney }: LandingPageProps) {
+export default function LandingPage({ onStartJourney, onGuestEnter }: LandingPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Track scroll of the entire page
@@ -186,7 +187,7 @@ export default function LandingPage({ onStartJourney }: LandingPageProps) {
               className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6"
             >
               <button 
-                onClick={onStartJourney}
+                onClick={onGuestEnter}
                 className="group flex items-center space-x-3 bg-slate-900 text-white px-8 py-4 rounded-full font-bold text-sm hover:bg-slate-800 transition-colors"
               >
                 <span>Launch Dashboard</span>
@@ -376,7 +377,7 @@ export default function LandingPage({ onStartJourney }: LandingPageProps) {
               </h2>
 
               <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-xl max-w-xl">
-                <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onStartJourney(); }}>
+                <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onGuestEnter(); }}>
                   <div>
                     <label className="block text-xs font-bold tracking-widest uppercase text-slate-500 mb-2">Your Name</label>
                     <input type="text" placeholder="Jane Doe" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-slate-400 transition-colors" />

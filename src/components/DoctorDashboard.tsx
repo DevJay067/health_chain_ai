@@ -1,6 +1,7 @@
-import { Users, FileText, Activity, Shield, LogOut, CheckCircle, XCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Users, FileText, Activity, Shield, LogOut, CheckCircle, XCircle, Inbox } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { useWeb3 } from '../hooks/useWeb3';
 
 interface DoctorDashboardProps {
@@ -16,6 +17,7 @@ export default function DoctorDashboard({ user, onLogout }: DoctorDashboardProps
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [patientRecords, setPatientRecords] = useState<any[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
+  const [incomingShares, setIncomingShares] = useState<any[]>([]);
 
   useEffect(() => {
     fetchPatients();
@@ -23,6 +25,7 @@ export default function DoctorDashboard({ user, onLogout }: DoctorDashboardProps
 
   const fetchPatients = async () => {
     try {
+      // Fetch general patient access requests (approved)
       const q = query(
         collection(db, 'access_requests'), 
         where('doctorEmail', '==', user.email),
@@ -35,6 +38,19 @@ export default function DoctorDashboard({ user, onLogout }: DoctorDashboardProps
          email: doc.data().patientEmail
       }));
       setPatients(approvedPatients as any);
+
+      // Fetch incoming document shares (pending and accepted)
+      const sharesQ = query(
+        collection(db, 'document_shares'),
+        where('doctorEmail', '==', user.email)
+      );
+      const sharesSnapshot = await getDocs(sharesQ);
+      const sharesData = sharesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setIncomingShares(sharesData);
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -100,6 +116,51 @@ export default function DoctorDashboard({ user, onLogout }: DoctorDashboardProps
     }
   };
 
+  const acceptShare = async (shareId: string) => {
+    try {
+      const shareRef = doc(db, 'document_shares', shareId);
+      await updateDoc(shareRef, {
+        status: 'accepted'
+      });
+      alert('Document access accepted.');
+      fetchPatients(); // refresh shares list
+    } catch (error) {
+      console.error(error);
+      alert('Failed to accept document share.');
+    }
+  };
+
+  const viewSharedRecord = async (share: any) => {
+     // A doctor views a specific shared record directly
+     setSelectedPatient(`Shared Doc: ${share.documentTitle} (from ${share.patientName})`);
+     setLoadingRecords(true);
+     setPatientRecords([]);
+     
+     try {
+       // Since the doctor is granted access to THIS specific docId, we fetch it directly
+       const recordsQ = query(collection(db, 'records'), where('id', '==', share.documentId));
+       const snapshot = await getDocs(recordsQ);
+       
+       if (snapshot.empty) {
+          // Fallback if ID is the document ID (firestore ID) not the object ID
+          const docRef = doc(db, 'records', share.documentId);
+          // Wait, patient's records are stored with their custom `id` field or just doc.id. 
+          // Our PatientDashboard sets `id: crypto.randomUUID()` when creating it.
+       }
+       
+       const recordsData = snapshot.docs.map(d => ({
+         id: d.id,
+         ...d.data()
+       }));
+       setPatientRecords(recordsData);
+     } catch(err) {
+        console.error(err);
+        alert("Failed to load shared document.");
+     } finally {
+        setLoadingRecords(false);
+     }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans selection:bg-lime-200">
       <nav className="fixed top-0 w-full z-50 px-4 py-4 lg:px-8 flex justify-between items-center bg-white/80 backdrop-blur-xl border-b border-white shadow-sm">
@@ -135,8 +196,34 @@ export default function DoctorDashboard({ user, onLogout }: DoctorDashboardProps
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
+            
+            {/* Incoming Specific Document Shares */}
+            {incomingShares.length > 0 && (
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mb-6">
+                <h2 className="text-xl font-bold mb-4 flex items-center"><Inbox className="w-5 h-5 mr-2 text-indigo-500"/> Shared Documents</h2>
+                <div className="space-y-4">
+                  {incomingShares.map((share: any) => (
+                    <div key={share.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                      <div>
+                        <p className="font-bold text-slate-900">{share.documentTitle}</p>
+                        <p className="text-sm text-slate-500">From: {share.patientName} ({share.patientEmail})</p>
+                        <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-bold">Status: <span className={share.status === 'accepted' ? 'text-lime-600' : 'text-amber-500'}>{share.status}</span></p>
+                      </div>
+                      <div className="mt-4 sm:mt-0 flex space-x-2">
+                        {share.status === 'pending' ? (
+                          <button onClick={() => acceptShare(share.id)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-colors">Accept</button>
+                        ) : (
+                          <button onClick={() => viewSharedRecord(share)} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:border-indigo-500 transition-colors">View Document</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-              <h2 className="text-xl font-bold mb-4 flex items-center"><Users className="w-5 h-5 mr-2 text-lime-500"/> My Patients (Approved Access)</h2>
+              <h2 className="text-xl font-bold mb-4 flex items-center"><Users className="w-5 h-5 mr-2 text-lime-500"/> My Patients (Full Approved Access)</h2>
               {loading ? (
                 <p>Loading...</p>
               ) : patients.length === 0 ? (

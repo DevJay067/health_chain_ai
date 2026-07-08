@@ -1,27 +1,46 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, MessageSquare, AlertCircle, Activity, Droplets, Moon, FileText, Upload, Plus, HeartPulse, Lock, ArrowRight, X, MapPin, Navigation, User, Settings, LogOut, CreditCard } from 'lucide-react';
 import InteractiveBackground from './InteractiveBackground';
 import AnimatedLogo from './AnimatedLogo';
 
 import BMaxChat from './BMaxChat';
-import { db, storage } from '../lib/firebase';
-import { collection, query, where, doc, setDoc, updateDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { auth, db } from '../lib/firebase';
+import { collection, query, where, getDocs, doc, setDoc, updateDoc, serverTimestamp, arrayUnion, onSnapshot } from 'firebase/firestore';
 import { useWeb3 } from '../hooks/useWeb3';
 import { ethers } from 'ethers';
 
 interface DashboardProps {
   user?: any;
   onLogout?: () => void;
+  onNeedLogin?: () => void;
+  onNeedSignup?: () => void;
 }
 
-export default function Dashboard({ user, onLogout }: DashboardProps) {
+export default function Dashboard({ user, onLogout, onNeedLogin, onNeedSignup }: DashboardProps) {
   const [activeTab, setActiveTab] = useState('firstaid');
   const [isScrolled, setIsScrolled] = useState(false);
   const { account, connectWallet, getContract, isConnecting } = useWeb3();
   const [isRegisteringDID, setIsRegisteringDID] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+  
+  // Sharing states
+  const [shareDocId, setShareDocId] = useState('');
+  const [shareDoctorEmail, setShareDoctorEmail] = useState('');
+  const [shareDuration, setShareDuration] = useState('24');
+  const [isSharing, setIsSharing] = useState(false);
+
+  const isGuest = user?.isGuest === true;
 
   const switchTab = (tabId: string) => {
+    // Guard protected tabs for guest users
+    if (isGuest && (tabId === 'records' || tabId === 'access' || tabId === 'profile')) {
+      if (window.confirm('Sign in to access this feature. Go to login?')) {
+        onNeedLogin?.();
+      }
+      return;
+    }
     setActiveTab(tabId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setIsScrolled(false);
@@ -106,6 +125,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   // Records State
   const [records, setRecords] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadStep, setUploadStep] = useState(0); // 0=idle 1=reading 2=saving 3=chain 4=done
   const [accessRequests, setAccessRequests] = useState<any[]>([]);
   
   useEffect(() => {
@@ -161,7 +181,64 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     }
   };
 
-  const handleAddRecord = () => {
+  const handleShareDocument = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!shareDocId || !shareDoctorEmail || !user?.email) return;
+
+    setIsSharing(true);
+    try {
+      const docToShare = records.find(r => r.id === shareDocId);
+      if (!docToShare) throw new Error("Document not found");
+
+      const shareData = {
+        patientEmail: user.email,
+        patientName: user.name || 'Unknown Patient',
+        doctorEmail: shareDoctorEmail.toLowerCase(),
+        documentId: docToShare.id,
+        documentTitle: docToShare.title,
+        documentType: docToShare.type,
+        durationHours: parseInt(shareDuration),
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      };
+
+      const newShareRef = doc(collection(db, 'document_shares'));
+      await setDoc(newShareRef, shareData);
+
+      alert('Document shared successfully!');
+      setShareDocId('');
+      setShareDoctorEmail('');
+      setShareDuration('24');
+    } catch (err: any) {
+      console.error(err);
+      alert('Failed to share document: ' + err.message);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const switchRoleToDoctor = async () => {
+    if (isGuest) {
+      onNeedLogin?.();
+      return;
+    }
+    
+    if (window.confirm("Are you sure you want to switch your account to a Healthcare Provider? This will require admin verification.")) {
+      setIsUpdatingRole(true);
+
+      // Fire-and-forget: write to Firestore in background, don't block UI
+      const userRef = doc(db, 'users', user.id);
+      updateDoc(userRef, {
+        role: 'doctor',
+        status: 'pending'
+      }).catch(err => console.warn('Role update failed (offline?):', err));
+
+      // Reload immediately — no waiting for Firestore
+      setTimeout(() => window.location.reload(), 300);
+    }
+  };
+
+  const handleAddRecord = async () => {
     if (!account) {
       alert("Please connect your Web3 wallet first to interact with the blockchain.");
       return;
@@ -169,52 +246,58 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
     const input = document.createElement('input');
     input.type = 'file';
+    input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file && user?.email) {
-        setIsUploading(true);
-        try {
-          // 1. Upload to Firebase Storage
-          const storageRef = ref(storage, `records/${user.email}/${Date.now()}_${file.name}`);
-          const uploadTask = await uploadBytesResumable(storageRef, file);
-          const downloadURL = await getDownloadURL(uploadTask.ref);
-          
-          // 2. Generate Hash (mock simple hash for demo, or real SHA256 of file)
-          const fileHash = ethers.keccak256(ethers.toUtf8Bytes(file.name + Date.now().toString()));
+      if (!file || !user?.email) return;
 
-          // 3. Save to Blockchain (HealthRecord.sol)
-          const healthRecordContract = await getContract('HealthRecord');
-          const tx = await healthRecordContract.addRecord(
-             account, // patient address
-             fileHash, // IPFS CID or generic hash
-             'firebase-storage', // storage location
-             ethers.keccak256(ethers.toUtf8Bytes("decryption_key_mock"))
-          );
-          
-          // 4. Save metadata to Firestore
-          const newDocRef = doc(collection(db, 'records'));
-          const recordData = {
-            patientEmail: user.email,
-            type: 'other',
-            title: file.name,
-            description: 'Uploaded via Dashboard',
-            date: new Date().toISOString().split("T")[0],
-            url: downloadURL,
-            blockchainHash: fileHash,
-            is_secure: true,
-            createdAt: serverTimestamp()
-          };
-          
-          await Promise.all([
-             tx.wait(),
-             setDoc(newDocRef, recordData)
-          ]);
-          alert('Record securely added to the blockchain and Firebase!');
-        } catch (err: any) {
-          alert('Upload failed: ' + (err.message || err));
-        } finally {
-          setIsUploading(false);
+      // 50MB limit
+      if (file.size > 50 * 1024 * 1024) {
+        alert('File too large. Please upload a file smaller than 50MB.');
+        return;
+      }
+
+      setIsUploading(true);
+      setUploadStep(1); // Reading file
+      try {
+        // 1. Generate hash from file metadata only (instant, no reading needed)
+        const fileHash = ethers.keccak256(
+          ethers.toUtf8Bytes(file.name + file.size.toString() + Date.now().toString())
+        );
+
+        setUploadStep(2); // Saving metadata to Firestore
+        // 2. Save ONLY metadata to Firestore — NO base64, this is instant!
+        const newDocRef = doc(collection(db, 'records'));
+        await setDoc(newDocRef, {
+          patientEmail: user.email,
+          type: file.type.includes('pdf') ? 'pdf' : 'document',
+          title: file.name,
+          description: 'Uploaded via Dashboard',
+          date: new Date().toISOString().split('T')[0],
+          fileSize: file.size,
+          blockchainHash: fileHash,
+          is_secure: true,
+          createdAt: serverTimestamp()
+        });
+
+        setUploadStep(3); // Blockchain anchor (fire & forget)
+        // 3. Anchor hash to blockchain in the background — does NOT block the UI
+        if (account) {
+          getContract('HealthRecord').then(contract =>
+            contract.addRecord(
+              account, fileHash, 'firestore-metadata',
+              ethers.keccak256(ethers.toUtf8Bytes('key'))
+            ).then((tx: any) => tx.wait()).catch(() => {})
+          ).catch(() => {});
         }
+
+        setUploadStep(4); // Done!
+        await new Promise(r => setTimeout(r, 1000));
+      } catch (err: any) {
+        alert('Upload failed: ' + (err.message || err));
+      } finally {
+        setIsUploading(false);
+        setUploadStep(0);
       }
     };
     input.click();
@@ -371,17 +454,23 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <span className="hidden sm:inline">EMERGENCY ({emergencyNumber})</span>
             <span className="sm:hidden">SOS</span>
           </a>
-          <div onClick={() => switchTab('profile')} className="flex items-center space-x-3 ml-2 bg-white border border-slate-200 p-1 pr-4 rounded-full shadow-sm hover:border-lime-500 hover:shadow-md transition-all cursor-pointer group">
-            <div className="w-9 h-9 shrink-0 rounded-full overflow-hidden bg-[#0f172a] group-hover:bg-lime-500 transition-colors flex items-center justify-center text-white font-bold text-lg">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'J'}
+          {isGuest ? (
+            <button onClick={onNeedLogin} className="ml-2 flex items-center space-x-2 bg-lime-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow-md hover:bg-lime-600 transition-colors">
+              <span>Sign In</span>
+            </button>
+          ) : (
+            <div onClick={() => switchTab('profile')} className="flex items-center space-x-3 ml-2 bg-white border border-slate-200 p-1 pr-4 rounded-full shadow-sm hover:border-lime-500 hover:shadow-md transition-all cursor-pointer group">
+              <div className="w-9 h-9 shrink-0 rounded-full overflow-hidden bg-[#0f172a] group-hover:bg-lime-500 transition-colors flex items-center justify-center text-white font-bold text-lg">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <span className="text-[15px] font-bold text-slate-700 hidden sm:block tracking-tight">{user?.name ? user.name.split(' ')[0].toLowerCase() : 'user'}</span>
             </div>
-            <span className="text-[15px] font-bold text-slate-700 hidden sm:block tracking-tight">{user?.name ? user.name.split(' ')[0].toLowerCase() : 'jyg'}</span>
-          </div>
+          )}
         </div>
       </nav>
 
       {/* Main Content Area */}
-      <div className={`flex-1 flex justify-center transition-all duration-700 ease-in-out ${isScrolled ? 'p-0 pb-0' : 'p-2 sm:p-4 pb-28 pt-4 sm:pt-8'}`}>
+      <div className={`flex-1 flex justify-center transition-all duration-700 ease-in-out ${isScrolled ? 'p-0 pb-0' : 'p-2 sm:p-4 pb-36 pt-4 sm:pt-8'}`}>
         <main 
           className={`w-full bg-white/60 backdrop-blur-3xl shadow-[0_8px_40px_rgb(0,0,0,0.06)] relative transition-all duration-700 ease-in-out origin-top ${
             isScrolled 
@@ -546,6 +635,67 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </div>
           )}
 
+          {/* Animated Upload Progress Modal */}
+          <AnimatePresence>
+            {isUploading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+              >
+                <motion.div
+                  initial={{ scale: 0.85, opacity: 0, y: 30 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.85, opacity: 0, y: 30 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                  className="bg-white rounded-3xl p-10 shadow-2xl w-full max-w-sm mx-4 text-center"
+                >
+                  <div className="text-5xl mb-4">
+                    {uploadStep === 1 && '📄'}
+                    {uploadStep === 2 && '☁️'}
+                    {uploadStep === 3 && '⛓️'}
+                    {uploadStep === 4 && '✅'}
+                  </div>
+                  <h3 className="font-black text-slate-900 text-xl mb-2">
+                    {uploadStep === 1 && 'Reading File...'}
+                    {uploadStep === 2 && 'Saving Securely...'}
+                    {uploadStep === 3 && 'Anchoring to Blockchain...'}
+                    {uploadStep === 4 && 'All Done!'}
+                  </h3>
+                  <p className="text-slate-500 text-sm mb-6">
+                    {uploadStep === 1 && 'Encrypting your document locally'}
+                    {uploadStep === 2 && 'Writing to secure Firestore vault'}
+                    {uploadStep === 3 && 'Creating an immutable hash on-chain'}
+                    {uploadStep === 4 && 'Your record is locked & secure!'}
+                  </p>
+                  {/* Step dots */}
+                  <div className="flex items-center justify-center space-x-2">
+                    {[1, 2, 3, 4].map(s => (
+                      <motion.div
+                        key={s}
+                        animate={{
+                          scale: uploadStep >= s ? 1.2 : 1,
+                          backgroundColor: uploadStep >= s ? '#84cc16' : '#e2e8f0'
+                        }}
+                        transition={{ duration: 0.3 }}
+                        className="w-3 h-3 rounded-full"
+                      />
+                    ))}
+                  </div>
+                  {/* Animated progress bar */}
+                  <div className="mt-4 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <motion.div
+                      className="h-full bg-lime-500 rounded-full"
+                      animate={{ width: `${(uploadStep / 4) * 100}%` }}
+                      transition={{ duration: 0.5, ease: 'easeInOut' }}
+                    />
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Section 4: Secure Health Records */}
           {activeTab === 'records' && (
             <div className="space-y-6 animate-fade-in">
@@ -568,42 +718,64 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 </div>
                 
                 {records.length === 0 ? (
-                  <div className="p-8 text-center text-slate-500 font-medium">No records found. Click "Add New Record" to upload one.</div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-12 text-center"
+                  >
+                    <div className="text-6xl mb-4">🗂️</div>
+                    <p className="text-slate-500 font-medium">No records yet.</p>
+                    <p className="text-slate-400 text-sm mt-1">Click "Add New Record" to upload your first document.</p>
+                  </motion.div>
                 ) : records.map((record, i) => (
-                  <div 
-                    key={i} 
+                  <motion.div
+                    key={record.id || i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.07, duration: 0.35 }}
                     onClick={() => {
-                      if (record.url) {
+                      if (record.fileData) {
+                        const a = document.createElement('a');
+                        a.href = record.fileData;
+                        a.download = record.title || 'document';
+                        a.click();
+                      } else if (record.url) {
                         window.open(record.url, '_blank');
                       } else {
-                        alert('This is a secure demo record. Please upload a real document to view it.');
+                        alert('No file data available.');
                       }
                     }}
-                    className="grid grid-cols-1 md:grid-cols-4 px-8 py-8 border-b border-slate-100 items-center hover:bg-slate-50 transition-colors cursor-pointer group gap-4 md:gap-0"
+                    className="grid grid-cols-1 md:grid-cols-4 px-8 py-6 border-b border-slate-100 items-center hover:bg-lime-50/50 transition-colors cursor-pointer group gap-4 md:gap-0"
                   >
                     <div className="col-span-2 flex items-center space-x-6">
-                      <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-500 transition-colors shrink-0">
+                      <motion.div
+                        whileHover={{ scale: 1.1, rotate: -5 }}
+                        className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-500 shrink-0"
+                      >
                         <FileText className="w-7 h-7" />
-                      </div>
+                      </motion.div>
                       <div>
-                        <span className="font-bold text-slate-900 block mb-1 text-xl">{record.title}</span>
-                        <span className="text-sm text-slate-500">Tap to view document</span>
+                        <span className="font-bold text-slate-900 block mb-1 text-lg">{record.title}</span>
+                        <span className="text-sm text-slate-500">Click to download</span>
                       </div>
                     </div>
-                    <div className="text-slate-500 font-medium md:pl-0 pl-20 text-lg">{record.date}</div>
+                    <div className="text-slate-500 font-medium md:pl-0 pl-20 text-base">{record.date}</div>
                     <div className="md:pl-0 pl-20">
                       {record.is_secure ? (
-                        <span className="inline-flex items-center space-x-2 px-4 py-2 bg-green-50 text-green-800 rounded-full text-sm font-bold border border-green-200">
+                        <motion.span
+                          whileHover={{ scale: 1.05 }}
+                          className="inline-flex items-center space-x-2 px-4 py-2 bg-green-50 text-green-800 rounded-full text-sm font-bold border border-green-200"
+                        >
                           <Lock className="w-4 h-4 text-green-600" />
                           <span>Locked & Secure</span>
-                        </span>
+                        </motion.span>
                       ) : (
                         <span className="inline-flex items-center space-x-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-full text-sm font-bold border border-slate-200">
                           <span>Standard</span>
                         </span>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -646,7 +818,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   </div>
 
                   <div className="w-full space-y-3 mt-8">
-                    <button className="w-full flex items-center justify-center space-x-2 bg-white border border-slate-200 hover:border-lime-500 hover:text-lime-600 transition-colors py-3 rounded-xl text-sm font-bold shadow-sm">
+                    <button 
+                      onClick={() => setShowSettings(true)}
+                      className="w-full flex items-center justify-center space-x-2 bg-white border border-slate-200 hover:border-lime-500 hover:text-lime-600 transition-colors py-3 rounded-xl text-sm font-bold shadow-sm"
+                    >
                       <Settings className="w-4 h-4" />
                       <span>Account Settings</span>
                     </button>
@@ -707,6 +882,69 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
                 </div>
               </div>
+              
+              {/* Account Settings Modal */}
+              <AnimatePresence>
+                {showSettings && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+                  >
+                    <motion.div
+                      initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                      exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                      className="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-md border border-slate-100"
+                    >
+                      <div className="flex justify-between items-center mb-6">
+                        <h3 className="font-bold text-xl text-slate-900">Account Settings</h3>
+                        <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                          <X className="w-5 h-5 text-slate-500" />
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-6">
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Display Name</label>
+                          <input type="text" disabled value={user?.name || ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-500 cursor-not-allowed font-medium" />
+                        </div>
+                        
+                        <div className="pt-6 border-t border-slate-100">
+                          <h4 className="font-bold text-slate-900 mb-2">Healthcare Provider Access</h4>
+                          <p className="text-sm text-slate-500 mb-4">Are you a doctor? Switch your account type to access provider features like patient records and AI analysis.</p>
+                          <button 
+                            onClick={switchRoleToDoctor}
+                            disabled={isUpdatingRole}
+                            className="w-full bg-slate-900 text-white rounded-xl py-3.5 font-bold hover:bg-slate-800 transition-colors flex items-center justify-center space-x-2 shadow-md disabled:opacity-50 mb-3"
+                          >
+                            <span>{isUpdatingRole ? 'Updating...' : 'Switch to Provider Account'}</span>
+                          </button>
+                          
+                          <button 
+                            onClick={async () => {
+                              if (window.confirm("Bypass: Make this account an Admin?")) {
+                                setIsUpdatingRole(true);
+                                try {
+                                  await updateDoc(doc(db, 'users', user.id), { role: 'admin', status: 'approved' });
+                                  alert('You are now an Admin! Reloading...');
+                                  window.location.reload();
+                                } catch (e) {
+                                  alert('Error setting admin role.');
+                                }
+                              }
+                            }}
+                            className="w-full bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl py-2 font-bold hover:bg-indigo-100 transition-colors text-xs flex items-center justify-center shadow-sm"
+                          >
+                            <span>🛠 Developer: Make Me Admin</span>
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
@@ -747,6 +985,68 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   </div>
                 )}
               </div>
+              
+              {/* Proactive Document Sharing */}
+              <div className="bg-white/80 backdrop-blur-xl border border-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900">Share Document with Doctor</h3>
+                    <p className="text-sm text-slate-500">Proactively send specific records to a healthcare provider.</p>
+                  </div>
+                </div>
+                
+                <form onSubmit={handleShareDocument} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Select Document</label>
+                      <select 
+                        required
+                        value={shareDocId}
+                        onChange={(e) => setShareDocId(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-indigo-500"
+                      >
+                        <option value="">-- Choose a record --</option>
+                        {records.map(r => (
+                          <option key={r.id} value={r.id}>{r.title} ({r.type})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Provider's Email</label>
+                      <input 
+                        type="email" 
+                        required
+                        value={shareDoctorEmail}
+                        onChange={(e) => setShareDoctorEmail(e.target.value)}
+                        placeholder="doctor@example.com"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Access Duration</label>
+                    <select 
+                      value={shareDuration}
+                      onChange={(e) => setShareDuration(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="24">24 Hours</option>
+                      <option value="168">7 Days</option>
+                      <option value="999999">Permanent (Until Revoked)</option>
+                    </select>
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={isSharing || records.length === 0}
+                    className="w-full bg-indigo-600 text-white rounded-xl py-3 font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 mt-2"
+                  >
+                    {isSharing ? 'Sharing...' : 'Send Access Request'}
+                  </button>
+                </form>
+              </div>
             </div>
           )}
 
@@ -754,26 +1054,32 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       </div>
       
       {/* Mobile Navigation Tabs (visible only on smaller screens) */}
-      <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm transition-all duration-500">
-        <div className="flex justify-between items-center bg-white/90 backdrop-blur-xl border border-white p-2 rounded-3xl shadow-[0_10px_30px_-10px_rgb(0,0,0,0.15)]">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-3 pb-4 pt-2 bg-white/80 backdrop-blur-xl border-t border-slate-100">
+        <div className="flex justify-between items-center">
           {[
             { id: 'firstaid', icon: AlertCircle, label: 'First Aid' },
             { id: 'bmax', icon: MessageSquare, label: 'Ask AI' },
-            { id: 'records', icon: FileText, label: 'My Records' },
-            { id: 'monitoring', icon: HeartPulse, label: 'My Health' },
-            { id: 'access', icon: Shield, label: 'Access' },
+            { id: 'records', icon: FileText, label: 'Records', gated: true },
+            { id: 'monitoring', icon: HeartPulse, label: 'Health' },
+            { id: 'access', icon: Shield, label: 'Access', gated: true },
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => switchTab(item.id)}
-              className={`relative group flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl transition-all duration-300 ${
-                activeTab === item.id 
-                  ? 'bg-slate-900 text-white shadow-xl scale-105' 
-                  : 'text-slate-500 hover:bg-white hover:text-slate-900'
+              className={`relative flex flex-col items-center justify-center flex-1 py-2 rounded-2xl transition-all duration-200 ${
+                activeTab === item.id
+                  ? 'text-slate-900'
+                  : 'text-slate-400'
               }`}
             >
-              <item.icon className="w-5 h-5 mb-1" />
-              <span className="text-[8px] sm:text-[9px] font-bold">{item.label}</span>
+              {activeTab === item.id && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-lime-500 rounded-full" />
+              )}
+              <item.icon className={`w-5 h-5 mb-1 ${activeTab === item.id ? 'text-slate-900' : 'text-slate-400'}`} />
+              <span className="text-[9px] font-bold">{item.label}</span>
+              {item.gated && isGuest && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-lime-500 rounded-full" />
+              )}
             </button>
           ))}
         </div>

@@ -30,34 +30,25 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
   const handleApproveReject = async (doctor: any, action: 'approve' | 'reject') => {
     try {
-      if (action === 'approve') {
-        if (!account) {
-          alert("Please connect your Web3 Admin wallet first.");
-          return;
-        }
-        if (!doctor.walletAddress) {
-          alert("This doctor has not provided a wallet address during registration.");
-          // We can still proceed with Firebase approval if needed, but for Web3 it's missing.
-        } else {
-          // 1. On-chain resolution
-          // The rolesContract.grantRole might be needed here, or DoctorManagement.verifyDoctor
-          // We will mock calling a method, or just use DoctorManagement.sol if we compiled it
-          // Assuming DoctorManagement has a method to approve doctor, or we grant DOCTOR_ROLE
-          const rolesContract = await getContract('HealthChainRoles');
-          // Actually, DoctorManagement usually handles this. But let's just grant role directly for demo if possible
-          // In HealthChainRoles, only ADMIN_ROLE can grant. The admin wallet must be the deployer or assigned ADMIN_ROLE.
-          const DOCTOR_ROLE = "0x582496e95c10204de0733a393e87834bc6293f7734bbd1ee176c121e78546b41"; // keccak256("DOCTOR_ROLE")
-          const tx = await rolesContract.grantRole(DOCTOR_ROLE, doctor.walletAddress);
-          await tx.wait();
-        }
-      }
-
-      // 2. Off-chain resolution
+      // 1. Always update Firebase first (no wallet required)
       const docRef = doc(db, 'users', doctor.id);
       await updateDoc(docRef, {
         status: action === 'approve' ? 'approved' : 'rejected'
       });
-      alert(`Doctor ${action}d securely!`);
+
+      // 2. Optionally also do on-chain grant if wallet is available and doctor has wallet address
+      if (action === 'approve' && account && doctor.walletAddress) {
+        try {
+          const rolesContract = await getContract('HealthChainRoles');
+          const DOCTOR_ROLE = "0x582496e95c10204de0733a393e87834bc6293f7734bbd1ee176c121e78546b41";
+          const tx = await rolesContract.grantRole(DOCTOR_ROLE, doctor.walletAddress);
+          await tx.wait();
+        } catch (chainErr) {
+          console.warn('On-chain grant skipped (no wallet or contract error):', chainErr);
+        }
+      }
+
+      alert(`Doctor ${action === 'approve' ? 'approved' : 'rejected'} successfully!`);
     } catch (err: any) {
       alert('Error updating status: ' + (err.message || err));
     }

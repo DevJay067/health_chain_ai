@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Clock, LogOut } from 'lucide-react';
-import Preloader from './components/Preloader';
 import LandingPage from './components/LandingPage';
 import PatientDashboard from './components/PatientDashboard';
 import DoctorDashboard from './components/DoctorDashboard';
@@ -13,79 +12,60 @@ import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
-type AppState = 'loading' | 'landing' | 'login' | 'signup' | 'dashboard';
+// Guest user object — gets the full PatientDashboard in read-only mode
+const GUEST_USER = { id: 'guest', name: 'Guest', email: '', role: 'patient', status: 'approved', isGuest: true };
+
+// Hardcoded admin emails — always get admin role regardless of Firestore doc
+const ADMIN_EMAILS = ['admin@healthchain.ai', 'jaymagar310@gmail.com'];
+
+type AppState = 'landing' | 'login' | 'signup' | 'dashboard';
 
 function App() {
-  const [appState, setAppState] = useState<AppState>('loading');
-  const [user, setUser] = useState<any>(null);
+  const [appState, setAppState] = useState<AppState>('landing');
+  const [user, setUser] = useState<any>(GUEST_USER);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    // Hard fallback: If Firebase doesn't respond in 3 seconds, force to landing
-    const fallbackTimeout = setTimeout(() => {
-      if (isMounted && appState === 'loading') {
-        console.warn("Firebase Auth timed out, forcing to landing page");
-        setAppState('landing');
-      }
-    }, 3000);
-
-    // We can show the preloader while checking auth state
+    // Check if Firebase has a cached session — resolve instantly from localStorage
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      clearTimeout(fallbackTimeout);
       if (!isMounted) return;
+
       if (firebaseUser) {
         try {
-          // Fetch user data from Firestore
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          const isAdmin = ADMIN_EMAILS.includes(firebaseUser.email || '');
           if (userDoc.exists()) {
-             setUser(userDoc.data());
-             setAppState('dashboard');
+            // Override role if this is a hardcoded admin email
+            const data = userDoc.data();
+            setUser(isAdmin ? { ...data, role: 'admin', status: 'approved' } : data);
+          } else if (isAdmin) {
+            setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || 'Admin', email: firebaseUser.email, role: 'admin', status: 'approved' });
           } else {
-             // Admin hardcoded mock fallback if needed, or just handle missing doc
-             if (firebaseUser.email === 'admin@healthchain.ai') {
-                 setUser({
-                   id: firebaseUser.uid,
-                   name: 'System Admin',
-                   email: 'admin@healthchain.ai',
-                   role: 'admin',
-                   status: 'approved'
-                 });
-                 setAppState('dashboard');
-             } else {
-                 setUser(null);
-                 setAppState('landing');
-             }
+            // Google user with no Firestore doc yet
+            setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || 'User', email: firebaseUser.email, role: 'patient', status: 'approved' });
           }
-        } catch (error: any) {
-          console.error("Error fetching user data:", error);
-          // Fallback if client is offline or Firestore blocked, but user is authenticated
-          if (error.message?.includes('offline') || error.code === 'unavailable') {
-              setUser({
-                 id: firebaseUser.uid,
-                 name: firebaseUser.displayName || 'Offline User',
-                 email: firebaseUser.email,
-                 role: firebaseUser.email === 'admin@healthchain.ai' ? 'admin' : 'patient', // default to patient
-                 status: 'approved',
-                 isOfflineFallback: true
-              });
-              setAppState('dashboard');
-          } else {
-              setUser(null);
-              setAppState('landing');
-          }
+        } catch {
+          // Offline/blocked Firestore — use Firebase Auth data directly
+          const isAdmin = ADMIN_EMAILS.includes(firebaseUser.email || '');
+          setUser({
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || 'User',
+            email: firebaseUser.email,
+            role: isAdmin ? 'admin' : 'patient',
+            status: 'approved',
+            isOfflineFallback: true
+          });
         }
       } else {
-        setUser(null);
-        setAppState('landing');
+        // No session: put in guest mode, stay on landing or dashboard depending on current state
+        setUser(GUEST_USER);
       }
+      setAuthChecked(true);
     });
 
-    return () => {
-      isMounted = false;
-      clearTimeout(fallbackTimeout);
-      unsubscribe();
-    };
+    return () => { isMounted = false; unsubscribe(); };
   }, []);
 
   const handleStartJourney = () => {
@@ -94,40 +74,47 @@ function App() {
   };
 
   const handleAuthSuccess = (userData: any) => {
-    setUser(userData);
+    // Always enforce admin role for hardcoded admin emails, regardless of what Firestore says
+    const finalUser = ADMIN_EMAILS.includes(userData.email)
+      ? { ...userData, role: 'admin', status: 'approved' }
+      : userData;
+    setUser(finalUser);
     window.scrollTo(0, 0);
     setAppState('dashboard');
   };
 
   const handleLogout = async () => {
     await signOut(auth);
-    setUser(null);
+    setUser(GUEST_USER);
     setAppState('landing');
+  };
+
+  // Guest enters dashboard directly without logging in
+  const handleGuestEnter = () => {
+    setUser(GUEST_USER);
+    setAppState('dashboard');
   };
 
   return (
     <div className="min-h-screen bg-white max-w-[100vw] overflow-x-clip">
-      <AnimatePresence mode="wait">
-        {appState === 'loading' && (
-          <Preloader key="preloader" />
-        )}
-      </AnimatePresence>
-
       {appState === 'landing' && (
-        <LandingPage onStartJourney={handleStartJourney} />
+        <LandingPage
+          onStartJourney={handleStartJourney}
+          onGuestEnter={handleGuestEnter}
+        />
       )}
 
       {appState === 'login' && (
-        <Login 
-          onBack={() => setAppState('landing')} 
+        <Login
+          onBack={() => setAppState('landing')}
           onLoginSuccess={handleAuthSuccess}
           onGoToSignup={() => setAppState('signup')}
         />
       )}
 
       {appState === 'signup' && (
-        <Signup 
-          onBack={() => setAppState('landing')} 
+        <Signup
+          onBack={() => setAppState('landing')}
           onSignupSuccess={handleAuthSuccess}
           onGoToLogin={() => setAppState('login')}
         />
@@ -135,9 +122,17 @@ function App() {
 
       {appState === 'dashboard' && user && (
         <>
+          {(user.role === 'patient' || user.isGuest) && (
+            <PatientDashboard
+              user={user}
+              onLogout={handleLogout}
+              onNeedLogin={() => setAppState('login')}
+              onNeedSignup={() => setAppState('signup')}
+            />
+          )}
+
           {user.role === 'admin' && <AdminDashboard user={user} onLogout={handleLogout} />}
-          {user.role === 'patient' && <PatientDashboard user={user} onLogout={handleLogout} />}
-          
+
           {user.role === 'doctor' && user.status === 'pending' && (
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc]">
               <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-100 max-w-md text-center">
@@ -145,7 +140,7 @@ function App() {
                   <Clock className="w-10 h-10 text-yellow-500" />
                 </div>
                 <h1 className="text-2xl font-black text-slate-900 mb-2">Pending Approval</h1>
-                <p className="text-slate-500 mb-8">Your doctor account is currently pending admin verification. You will gain access once approved.</p>
+                <p className="text-slate-500 mb-8">Your doctor account is pending admin verification.</p>
                 <button onClick={handleLogout} className="flex items-center justify-center space-x-2 bg-slate-900 text-white w-full py-3 rounded-xl font-bold">
                   <LogOut className="w-4 h-4" />
                   <span>Log Out</span>
@@ -153,7 +148,7 @@ function App() {
               </div>
             </div>
           )}
-          
+
           {user.role === 'doctor' && user.status === 'approved' && <DoctorDashboard user={user} onLogout={handleLogout} />}
         </>
       )}
