@@ -1,9 +1,11 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/hexagon.svg" alt="HealthChain Logo" width="120" />
+  <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Microscope.png" alt="Animated Logo" width="120" />
   
   # HealthChain.AI 🧬
   
-  **Next-Generation Hybrid Healthcare Platform**
+  <a href="#">
+    <img src="https://readme-typing-svg.herokuapp.com/?font=Inter&weight=800&size=22&pause=1000&color=84CC16&center=true&vCenter=true&width=600&lines=Next-Generation+Hybrid+Healthcare;Web3+Immutability+Meets+Web2+Speed;Decentralized.+Secure.+Lightning+Fast." alt="Typing SVG" />
+  </a>
   
   <p align="center">
     <img src="https://img.shields.io/badge/Blockchain-Ethereum%20%7C%20Hardhat-627EEA?style=for-the-badge&logo=ethereum&logoColor=white" alt="Blockchain" />
@@ -18,12 +20,12 @@
 
 <br/>
 
-## ✨ The Vision
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Star-Struck.png" width="35" align="center" /> The Vision
 HealthChain.AI reimagines the healthcare experience. We combine a sleek, luxury-tier User Interface with a **Hybrid Blockchain Architecture**. Medical files and heavy queries are handled instantly via **Firebase**, while identity, access permissions, and document hashes are anchored immutably to the **Ethereum Blockchain**.
 
----
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%" />
 
-## 🛠️ The Tech Stack (What We Use & Why)
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Laptop.png" width="35" align="center" /> The Tech Stack (What We Use & Why)
 
 Building a healthcare application requires a delicate balance between **speed**, **usability**, and **absolute security (HIPAA/DISHA compliance)**. To achieve this, HealthChain.AI utilizes a true hybrid stack:
 
@@ -112,9 +114,9 @@ sequenceDiagram
     F-->>D: 10. Firebase validates on-chain consent & serves UI
 ```
 
----
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%" />
 
-## 🚀 Quick Start (Local Development)
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Rocket.png" width="35" align="center" /> Quick Start (Local Development)
 
 ### Prerequisites
 - Node.js (v18+)
