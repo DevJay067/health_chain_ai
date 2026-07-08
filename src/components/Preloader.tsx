@@ -5,13 +5,13 @@ export default function Preloader() {
     <motion.div 
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 1.5, ease: "easeInOut" }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-white"
     >
       <motion.div 
         initial={{ scale: 1 }}
-        exit={{ scale: 0.8 }}
-        transition={{ duration: 1.5, ease: "easeInOut" }}
+        exit={{ scale: 0.95 }}
+        transition={{ duration: 0.2, ease: "easeInOut" }}
         className="relative flex flex-col items-center justify-center"
       >
         {/* Minimalist SVG Line Art Logo */}

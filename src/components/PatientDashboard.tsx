@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react';
-import { Shield, MessageSquare, AlertCircle, Activity, Droplets, Moon, FileText, Upload, Plus, HeartPulse, Lock, ArrowRight, X, MapPin, Navigation } from 'lucide-react';
+import { Shield, MessageSquare, AlertCircle, Activity, Droplets, Moon, FileText, Upload, Plus, HeartPulse, Lock, ArrowRight, X, MapPin, Navigation, User, Settings, LogOut, CreditCard } from 'lucide-react';
 import InteractiveBackground from './InteractiveBackground';
 import AnimatedLogo from './AnimatedLogo';
 
+import BMaxChat from './BMaxChat';
+import { db, storage } from '../lib/firebase';
+import { collection, query, where, doc, setDoc, updateDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { useWeb3 } from '../hooks/useWeb3';
+import { ethers } from 'ethers';
+
 interface DashboardProps {
-  onBackToHome?: () => void;
+  user?: any;
+  onLogout?: () => void;
 }
 
-export default function Dashboard({ onBackToHome }: DashboardProps) {
+export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState('firstaid');
   const [isScrolled, setIsScrolled] = useState(false);
+  const { account, connectWallet, getContract, isConnecting } = useWeb3(user.email);
+  const [isRegisteringDID, setIsRegisteringDID] = useState(false);
 
   const switchTab = (tabId: string) => {
     setActiveTab(tabId);
@@ -96,72 +106,151 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
   // Records State
   const [records, setRecords] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [accessRequests, setAccessRequests] = useState<any[]>([]);
   
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
   useEffect(() => {
-    fetch(`${API_URL}/api/records`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.success && data.records) {
-          setRecords(data.records);
-        } else {
-          setRecords([
-            { title: 'Blood Work Report (Demo)', date: 'Oct 12, 2025', is_secure: true },
-            { title: 'MRI Scan (Demo)', date: 'Sep 05, 2025', is_secure: true }
-          ]);
-        }
-      })
-      .catch(e => {
-        setRecords([
-          { title: 'Blood Work Report (Offline)', date: 'Oct 12, 2025', is_secure: true }
-        ]);
+    if (!user?.email) return;
+    
+    // Realtime listener for records
+    const recordsQ = query(collection(db, 'records'), where('patientEmail', '==', user.email));
+    const unsubRecords = onSnapshot(recordsQ, (snapshot) => {
+      const recs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRecords(recs.length ? recs : [
+        { title: 'Blood Work Report (Demo)', date: 'Oct 12, 2025', is_secure: true },
+        { title: 'MRI Scan (Demo)', date: 'Sep 05, 2025', is_secure: true }
+      ]);
+    });
+
+    // Realtime listener for access requests
+    const reqQ = query(collection(db, 'access_requests'), where('patientEmail', '==', user.email));
+    const unsubReqs = onSnapshot(reqQ, (snapshot) => {
+      const reqs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAccessRequests(reqs);
+    });
+
+    return () => {
+      unsubRecords();
+      unsubReqs();
+    };
+  }, [user]);
+
+  const resolveAccessRequest = async (request: any, action: 'approve' | 'deny') => {
+    if (!account) {
+      alert("Please connect your Web3 wallet first to interact with the blockchain.");
+      return;
+    }
+    
+    try {
+      // 1. On-chain resolution
+      const accessContract = await getContract('AccessRequest');
+      let tx;
+      if (action === 'approve') {
+         // Approve for 30 days (mock)
+         const duration = 30 * 24 * 60 * 60;
+         tx = await accessContract.approveAccess(request.onChainReqId || 1, duration);
+      } else {
+         tx = await accessContract.denyAccess(request.onChainReqId || 1);
+      }
+      await tx.wait();
+
+      // 2. Off-chain state update
+      const reqRef = doc(db, 'access_requests', request.id);
+      await updateDoc(reqRef, {
+        status: action === 'approve' ? 'approved' : 'rejected'
       });
-  }, []);
+      alert(`Request ${action}d securely on-chain!`);
+    } catch (err: any) {
+      alert('Error resolving request: ' + (err.message || err));
+    }
+  };
 
   const handleAddRecord = () => {
+    if (!account) {
+      alert("Please connect your Web3 wallet first to interact with the blockchain.");
+      return;
+    }
+
     const input = document.createElement('input');
     input.type = 'file';
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
+      if (file && user?.email) {
         setIsUploading(true);
         try {
-          const formData = new FormData();
-          formData.append('file', file);
-          const uploadRes = await fetch(`${API_URL}/api/upload`, {
-            method: 'POST',
-            body: formData
-          });
-          const uploadData = await uploadRes.json();
+          // 1. Upload to Firebase Storage
+          const storageRef = ref(storage, `records/${user.email}/${Date.now()}_${file.name}`);
+          const uploadTask = await uploadBytesResumable(storageRef, file);
+          const downloadURL = await getDownloadURL(uploadTask.ref);
           
+          // 2. Generate Hash (mock simple hash for demo, or real SHA256 of file)
+          const fileHash = ethers.keccak256(ethers.toUtf8Bytes(file.name + Date.now().toString()));
+
+          // 3. Save to Blockchain (HealthRecord.sol)
+          const healthRecordContract = await getContract('HealthRecord');
+          const tx = await healthRecordContract.addRecord(
+             account, // patient address
+             fileHash, // IPFS CID or generic hash
+             'firebase-storage', // storage location
+             ethers.keccak256(ethers.toUtf8Bytes("decryption_key_mock"))
+          );
+          await tx.wait();
+          
+          // 4. Save metadata to Firestore
+          const newDocRef = doc(collection(db, 'records'));
           const recordData = {
+            patientEmail: user.email,
             type: 'other',
             title: file.name,
             description: 'Uploaded via Dashboard',
             date: new Date().toISOString().split("T")[0],
-            metadata: {},
-            attachments: [{ name: uploadData.file_name, hash: uploadData.file_hash }]
+            url: downloadURL,
+            blockchainHash: fileHash,
+            is_secure: true,
+            createdAt: serverTimestamp()
           };
           
-          const res = await fetch(`${API_URL}/api/records`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(recordData)
-          });
-          const result = await res.json();
-          if (result.success) {
-            setRecords([result.record, ...records]);
-            alert(`Record securely added to blockchain! Block #${result.blockchain_proof?.index || 'latest'}`);
-          }
-        } catch (err) {
-          alert('Upload failed: ' + err);
+          await setDoc(newDocRef, recordData);
+          alert('Record securely added to the blockchain and Firebase!');
+        } catch (err: any) {
+          alert('Upload failed: ' + (err.message || err));
         } finally {
           setIsUploading(false);
         }
       }
     };
     input.click();
+  };
+
+  const registerDID = async () => {
+    if (!account) return;
+    setIsRegisteringDID(true);
+    try {
+      const rolesContract = await getContract('HealthChainRoles');
+      const did = `did:healthchain:patient:${account}`;
+      const mockCommitment = ethers.keccak256(ethers.toUtf8Bytes("mock_biometric"));
+      const tx = await rolesContract.registerPatient(did, mockCommitment);
+      await tx.wait();
+      
+      // Update firebase user with wallet address
+      await updateDoc(doc(db, 'users', user.id), {
+         walletAddress: account,
+         did: did
+      });
+      alert('Successfully registered Decentralized Identity on-chain!');
+    } catch(err: any) {
+      if (err.message?.includes('already registered') || JSON.stringify(err).includes('already registered')) {
+        alert('You are already registered on the blockchain! Syncing your profile...');
+        // Sync firebase if they were already registered on-chain
+        await updateDoc(doc(db, 'users', user.id), {
+           walletAddress: account,
+           did: `did:healthchain:patient:${account}`
+        }).catch(() => {});
+      } else {
+        alert("Registration failed: " + (err.message || err));
+      }
+    } finally {
+      setIsRegisteringDID(false);
+    }
   };
 
   const connectWatch = async () => {
@@ -231,10 +320,10 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
       <div className="relative z-10 flex flex-col h-full">
       {/* Dashboard Top Nav */}
       <nav className="bg-white/30 backdrop-blur-md border-b border-white/20 px-3 sm:px-12 py-3 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center space-x-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={onBackToHome}>
+        <div className="flex items-center space-x-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={onLogout}>
           <AnimatedLogo />
           <div className="hidden sm:block h-6 w-[1px] bg-slate-200"></div>
-          <p className="hidden sm:block text-[10px] uppercase tracking-widest text-slate-500 font-bold">Client OS</p>
+          <p className="hidden sm:block text-[10px] uppercase tracking-widest text-slate-500 font-bold">Log out</p>
         </div>
 
         {/* Top Navigation Tabs */}
@@ -244,6 +333,7 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
             { id: 'bmax', icon: MessageSquare, label: 'Ask AI' },
             { id: 'records', icon: FileText, label: 'My Records' },
             { id: 'monitoring', icon: HeartPulse, label: 'My Health' },
+            { id: 'access', icon: Shield, label: 'Access Control' },
           ].map((item) => (
             <button
               key={item.id}
@@ -261,17 +351,32 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
         </div>
 
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 mr-4 text-xs font-bold tracking-widest text-slate-500 uppercase hidden sm:flex">
+          <div className="flex items-center space-x-2 mr-2 text-xs font-bold tracking-widest text-slate-500 uppercase hidden sm:flex">
             <div className="w-2 h-2 rounded-full bg-lime-500 animate-pulse"></div>
             <span>System Active</span>
           </div>
+
+          {!account ? (
+             <button onClick={connectWallet} disabled={isConnecting} className="hidden sm:flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded-full font-bold text-sm shadow-md hover:bg-indigo-700 transition-colors">
+               <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+             </button>
+          ) : (
+             <div className="hidden sm:flex items-center space-x-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full font-bold text-sm border border-slate-200">
+               <span className="w-2 h-2 rounded-full bg-green-500"></span>
+               <span>{account.slice(0, 6)}...{account.slice(-4)}</span>
+             </div>
+          )}
+
           <a href={`tel:${emergencyNumber}`} className="flex items-center space-x-2 bg-red-600 text-white px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-full font-bold text-sm sm:text-base shadow-md hover:bg-red-700 transition-colors cursor-pointer group">
             <AlertCircle className="w-5 h-5 group-hover:animate-ping" />
             <span className="hidden sm:inline">EMERGENCY ({emergencyNumber})</span>
             <span className="sm:hidden">SOS</span>
           </a>
-          <div className="w-10 h-10 ml-2 shrink-0 rounded-full bg-slate-200 border border-slate-300 shadow-sm overflow-hidden cursor-pointer hover:border-lime-500 transition-colors">
-            <img src="https://ui-avatars.com/api/?name=User&background=0f172a&color=fff" alt="User" />
+          <div onClick={() => switchTab('profile')} className="flex items-center space-x-3 ml-2 bg-white border border-slate-200 p-1 pr-4 rounded-full shadow-sm hover:border-lime-500 hover:shadow-md transition-all cursor-pointer group">
+            <div className="w-9 h-9 shrink-0 rounded-full overflow-hidden bg-[#0f172a] group-hover:bg-lime-500 transition-colors flex items-center justify-center text-white font-bold text-lg">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'J'}
+            </div>
+            <span className="text-[15px] font-bold text-slate-700 hidden sm:block tracking-tight">{user?.name ? user.name.split(' ')[0].toLowerCase() : 'jyg'}</span>
           </div>
         </div>
       </nav>
@@ -288,22 +393,13 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
           
           {/* Section 1: Clinical Insights (Ask AI) */}
           {activeTab === 'bmax' && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6 animate-fade-in flex flex-col h-[650px]">
               <div>
                 <span className="text-xs font-bold tracking-widest uppercase text-lime-500 mb-2 block">Smart Assistant</span>
-                <h2 className="text-[clamp(1.875rem,5vw,2.25rem)] font-serif font-black text-slate-900 tracking-tight">Understand Your <span className="italic font-light">Test Results.</span></h2>
+                <h2 className="text-[clamp(1.875rem,5vw,2.25rem)] font-serif font-black text-slate-900 tracking-tight">Understand Your <span className="italic font-light">Health.</span></h2>
               </div>
-              
-              <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-4 flex flex-col border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-[550px] overflow-hidden relative">
-                <div className="absolute inset-0 w-full h-full p-2">
-                  <iframe
-                    src="https://www.jotform.com/app/253583637449470"
-                    title="B-Max AI Health Form"
-                    className="w-full h-full border-0 rounded-[1.5rem]"
-                    allow="accelerometer; autoplay; camera; clipboard-write; encrypted-media; gyroscope; microphone; payment"
-                    loading="lazy"
-                  />
-                </div>
+              <div className="flex-1 w-full">
+                <BMaxChat />
               </div>
             </div>
           )}
@@ -475,7 +571,17 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
                 {records.length === 0 ? (
                   <div className="p-8 text-center text-slate-500 font-medium">No records found. Click "Add New Record" to upload one.</div>
                 ) : records.map((record, i) => (
-                  <div key={i} className="grid grid-cols-1 md:grid-cols-4 px-8 py-8 border-b border-slate-100 items-center hover:bg-slate-50 transition-colors cursor-pointer group gap-4 md:gap-0">
+                  <div 
+                    key={i} 
+                    onClick={() => {
+                      if (record.url) {
+                        window.open(record.url, '_blank');
+                      } else {
+                        alert('This is a secure demo record. Please upload a real document to view it.');
+                      }
+                    }}
+                    className="grid grid-cols-1 md:grid-cols-4 px-8 py-8 border-b border-slate-100 items-center hover:bg-slate-50 transition-colors cursor-pointer group gap-4 md:gap-0"
+                  >
                     <div className="col-span-2 flex items-center space-x-6">
                       <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-500 transition-colors shrink-0">
                         <FileText className="w-7 h-7" />
@@ -504,6 +610,147 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
             </div>
           )}
 
+          {/* Section 5: Profile (Light/Glassmorphism theme matching app) */}
+          {activeTab === 'profile' && (
+            // ... profile logic (keeping it the same) ...
+            <div className="bg-white/60 backdrop-blur-3xl min-h-[600px] w-full rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 text-slate-900 border border-white shadow-[0_8px_40px_rgb(0,0,0,0.06)] relative overflow-hidden">
+              {/* Profile content omitted for brevity, keeping exact same structure */}
+              <div className="relative z-10 mb-8">
+                <h2 className="text-2xl font-bold tracking-tight mb-1 font-serif">User Dashboard</h2>
+                <p className="text-slate-500 text-sm">Manage your account, view analytics, and update your subscription.</p>
+              </div>
+
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* Left Column: Profile Card */}
+                <div className="bg-white/80 border border-slate-100 shadow-sm rounded-3xl p-8 flex flex-col items-center justify-between min-h-[400px]">
+                  <div className="flex flex-col items-center mt-4 w-full">
+                    <div className="w-28 h-28 rounded-full bg-[#0ea5e9] flex items-center justify-center text-white text-5xl font-medium mb-6 shadow-[0_8px_30px_rgba(14,165,233,0.3)] ring-4 ring-white">
+                      {user?.name ? user.name.charAt(0).toUpperCase() : 'J'}
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">{user?.name || 'Jay Magar'}</h3>
+                    <div className="bg-slate-100 px-4 py-1.5 rounded-full text-slate-600 font-medium text-sm border border-slate-200 mb-4">
+                      {user?.email || 'jaymagar067@gmail.com'}
+                    </div>
+
+                    {account && !user?.did && (
+                      <button onClick={registerDID} disabled={isRegisteringDID} className="w-full bg-indigo-50 text-indigo-700 border border-indigo-200 py-2 rounded-xl text-sm font-bold hover:bg-indigo-100 transition-colors mb-4">
+                        {isRegisteringDID ? 'Registering on-chain...' : 'Register Web3 DID'}
+                      </button>
+                    )}
+                    
+                    {user?.did && (
+                      <div className="w-full bg-green-50 text-green-700 border border-green-200 py-2 rounded-xl text-xs font-bold text-center mb-4 truncate px-2">
+                        {user.did}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="w-full space-y-3 mt-8">
+                    <button className="w-full flex items-center justify-center space-x-2 bg-white border border-slate-200 hover:border-lime-500 hover:text-lime-600 transition-colors py-3 rounded-xl text-sm font-bold shadow-sm">
+                      <Settings className="w-4 h-4" />
+                      <span>Account Settings</span>
+                    </button>
+                    <button onClick={onLogout} className="w-full flex items-center justify-center space-x-2 bg-white border border-slate-200 hover:border-red-500 hover:text-red-600 transition-colors py-3 rounded-xl text-sm font-bold shadow-sm">
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right Column: Analytics & Subscription */}
+                <div className="lg:col-span-2 space-y-6 flex flex-col">
+                  
+                  {/* Usage Analytics */}
+                  <div className="bg-white/80 border border-slate-100 shadow-sm rounded-3xl p-6 sm:p-8 flex-1">
+                    <div className="flex items-center space-x-2 mb-6">
+                      <Activity className="w-5 h-5 text-lime-500" />
+                      <h3 className="font-bold text-slate-900">Usage Analytics</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 hover:border-lime-500 transition-colors cursor-default">
+                        <p className="text-slate-500 text-xs font-bold tracking-wider uppercase mb-2">Health Records</p>
+                        <p className="text-4xl font-black text-slate-900 tracking-tight">{records.length}</p>
+                      </div>
+                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 hover:border-lime-500 transition-colors cursor-default">
+                        <p className="text-slate-500 text-xs font-bold tracking-wider uppercase mb-2">AI Consults</p>
+                        <p className="text-4xl font-black text-slate-900 tracking-tight">0</p>
+                      </div>
+                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 hover:border-lime-500 transition-colors cursor-default">
+                        <p className="text-slate-500 text-xs font-bold tracking-wider uppercase mb-2">IoT Syncs</p>
+                        <p className="text-4xl font-black text-slate-900 tracking-tight">0</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Subscription Plan */}
+                  <div className="bg-white/80 border border-slate-100 shadow-sm rounded-3xl p-6 sm:p-8 shrink-0">
+                    <div className="flex items-center space-x-2 mb-6">
+                      <CreditCard className="w-5 h-5 text-lime-500" />
+                      <h3 className="font-bold text-slate-900">Subscription Plan</h3>
+                    </div>
+                    
+                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-lime-500 transition-colors">
+                      <div>
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h4 className="font-bold text-lg text-slate-900">HealthChain Free</h4>
+                          <span className="px-3 py-1 bg-lime-100 text-lime-700 text-xs font-bold uppercase tracking-widest rounded-full">Active</span>
+                        </div>
+                        <p className="text-slate-500 text-sm font-medium">Next billing date: N/A</p>
+                      </div>
+                      <div className="text-left sm:text-right">
+                        <div className="text-slate-900 mb-1"><span className="text-3xl font-black">$0</span><span className="text-slate-500 font-medium">/mo</span></div>
+                        <button className="text-lime-600 font-bold text-sm hover:underline">Manage Billing</button>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Section 6: Access Control */}
+          {activeTab === 'access' && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div>
+                  <span className="text-xs font-bold tracking-widest uppercase text-lime-500 mb-2 block">Your Security</span>
+                  <h2 className="text-[clamp(1.875rem,5vw,2.25rem)] font-serif font-black text-slate-900 tracking-tight">Access <span className="italic font-light">Control.</span></h2>
+                </div>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-xl border border-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8">
+                <p className="text-slate-500 mb-6">Manage which healthcare providers have access to your encrypted medical records.</p>
+                {accessRequests.length === 0 ? (
+                  <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                    <Shield className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500 font-medium">No pending access requests.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {accessRequests.map((req: any) => (
+                      <div key={req.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div>
+                          <p className="font-bold text-slate-900">Dr. {req.doctorName}</p>
+                          <p className="text-sm text-slate-500">Reason: {req.reason}</p>
+                          <p className="text-xs text-slate-400 mt-1">Status: {req.status}</p>
+                        </div>
+                        {req.status === 'pending' && (
+                          <div className="mt-4 sm:mt-0 flex space-x-2">
+                            <button onClick={() => resolveAccessRequest(req, 'approve')} className="px-4 py-2 bg-lime-500 text-white text-sm font-bold rounded-xl hover:bg-lime-600 transition-colors">Approve</button>
+                            <button onClick={() => resolveAccessRequest(req, 'deny')} className="px-4 py-2 border border-red-500 text-red-500 text-sm font-bold rounded-xl hover:bg-red-50 transition-colors">Deny</button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
         </main>
       </div>
       
@@ -515,6 +762,7 @@ export default function Dashboard({ onBackToHome }: DashboardProps) {
             { id: 'bmax', icon: MessageSquare, label: 'Ask AI' },
             { id: 'records', icon: FileText, label: 'My Records' },
             { id: 'monitoring', icon: HeartPulse, label: 'My Health' },
+            { id: 'access', icon: Shield, label: 'Access' },
           ].map((item) => (
             <button
               key={item.id}
